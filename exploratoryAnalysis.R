@@ -260,18 +260,23 @@ final<- final %>% mutate(sig=replace(sig,pr<0.001,"***"))
 write.csv(final,paste0(getwd(),"/Analysis/ES/Max.Temp.BAall.csv"))
 
 #look at relationship between disease and micro-climate (AH)
+d.F<-read.csv(paste0(getwd(),"/Analysis/ES/ES.shrub.mod_analysis_dataset.csv"))
+
 df<-d.F[!is.na(d.F$ah.flower)&!is.na(d.F$ah.fruit),]
-df <-data_frame(Plot=df$Plot,Shrub.id=df$Shrub.id,year=df$year, ah.fruit=df$ah.fruit,ah.flower=df$ah.flower,tmax.flower=df$tmax.flower,tmax.fruit=df$tmax.fruit,elevation=df$elevation,patcharea=df$patcharea,BA.all=df$BA.all,BA.shade=df$BA.shade,GapDry=df$GapDry,
+df <-data_frame(Plot=df$Plot,Shrub.id=df$Shrub.id,year=df$year,kebele=df$kebele, ah.fruit=df$ah.fruit,ah.flower=df$ah.flower,tmax.flower=df$tmax.flower,tmax.fruit=df$tmax.fruit,elevation=df$elevation,patcharea=df$patcharea,BA.all=df$BA.all,BA.shade=df$BA.shade,GapDry=df$GapDry,
                 propCBB=df$propCBB,propCBD=df$propCBD,fruit.drop=df$fruit.drop,leaf.drop=df$leaf.drop,fruitset=df$fruitset,prop.ldrop=df$prop.ldrop,propLM=df$propLM,propCLR=df$propCLR,
                 iCLR=df$iCLR,propHerb=df$propHerb,pH=df$pH,CN.ratio=df$CN.ratio,Tot.P.ppm=df$Tot.P.ppm,K.meq=df$K.meq,Fe.ppm=df$Fe.ppm)
+df.low<-df %>% filter(kebele!="Badessa"&kebele!="Weyra")
+df.hi<-df %>% filter(kebele=="Badessa"|kebele=="Weyra")
 
-#variables normally distributed, propCLR, iCLR, prop.ldrop, propHerb (remove 0 and 1.0 values for fruitset)
-fset<-df %>% filter(fruitset!=0&fruitset!=1)
-pdf(paste0(getwd(),"/Analysis/ES/fruitset.qnorm.pdf"))
+#variables normally distributed fruitset, propCLR, iCLR, prop.ldrop, propHerb (remove 0 and 1.0 values for fruitset)
+#do for yayu
+fset<-df.low %>% filter(fruitset!=0&fruitset!=1&!is.na(propCLR))
+pdf(paste0(getwd(),"/Analysis/ES/fruitset.yayu.qnorm.pdf"))
 qqp(fset$fruitset,"norm")
 dev.off()
 
-frm01<-lmer(fruitset~ah.flower*patcharea+BA.shade*GapDry+(1|Plot)+(1|year),data=fset)
+frm01<-lmer(fruitset~propCLR+K.meq+(1|Plot/Shrub.id)+(1|year),data=fset)
 frm01s<-standardize(frm01)
 summary(frm01s)
 r.squaredGLMM(frm01s)
@@ -596,3 +601,626 @@ d.F<-d.F %>% distinct(ID, .keep_all = TRUE) %>% mutate(ah.fruit=replace(ah.fruit
   select(-new.ah.flower,new.ah.fruit)
 
 write.csv(d.F,paste0(getwd(),"/Analysis/ES/ES.shrub.mod_analysis_dataset.csv"))
+
+#do again for plot level
+ d.F.plot<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset.csv"))
+ 
+ df.2fill<-d.F.plot %>% filter(is.na(ah.flower))
+ fc2<-metdata %>% filter(Plot=="FC2")
+ 
+ fc2 <- fc2 %>% ungroup() %>% select(year,ah.flower,ah.fruit)
+ colnames(fc2)<-c("year","fc2.ah.flower","fc2.ah.fruit")
+ 
+ df.2fill <- left_join(df.2fill,fc2, by="year")
+ 
+ df.2fill<- df.2fill %>% group_by(Plot,year) %>% mutate(new.ah.flower=emod[1,"estimate"]+emod[2,"estimate"]*elevation+fc2.ah.flower,new.ah.fruit=emod1[1,"estimate"]+emod1[2,"estimate"]*elevation+fc2.ah.fruit) %>%
+   select(-fc2.ah.flower,-fc2.ah.fruit)
+ 
+ d.F.plot <- left_join(d.F.plot,df.2fill %>% select(Plot,year,new.ah.flower,new.ah.fruit),by=c("Plot","year"))
+ 
+ d.F.plot<-d.F.plot %>% distinct(ID, .keep_all = TRUE) %>% mutate(ah.fruit=replace(ah.fruit,is.na(ah.fruit),new.ah.fruit[is.na(ah.fruit)]),ah.flower=replace(ah.flower,is.na(ah.flower),new.ah.flower[is.na(ah.flower)])) %>%
+   select(-new.ah.flower,new.ah.fruit)
+
+ write.csv(d.F.plot,paste0(getwd(),"/Analysis/ES/ES.plot.mod_analysis_dataset.csv"))
+ 
+ #do figures of correlation plots
+ d.F <- read.csv(paste0(getwd(),"/Analysis/ES/ES.shrub.mod_analysis_dataset.csv"))
+ 
+ #plot average yield vs GapWet (Doraani) and ah.fruit, elevation, total P, BA legume and BA deciduous (Yayu)
+ avg.yield<-d.F %>% select(Plot,year,kebele,avg.kg,GapWet,ah.fruit,elevation,patcharea,Tot.P.ppm,BA.legume,BA.deciduous,BA.all)
+ #%>% gather(key="factor",value="value",-Plot,-year,-compost) 
+ avg.yield.d<-avg.yield %>% filter(kebele=="Badessa"|kebele=="Weyra")
+ avg.yield.y<-avg.yield %>% filter(kebele!="Badessa"&kebele!="Weyra") 
+ tmp2<-avg.yield.y %>%  group_by(Plot) %>% summarise(ah.fruit.avg=mean(ah.fruit,na.rm=T))
+ avg.yield.y<-left_join(avg.yield.y,tmp2,by="Plot")
+ 
+ #for Doraani
+ mod<-lm(avg.kg~GapWet,data=avg.yield.d)
+ 
+ emod<-tidy(mod)
+ #if(p.value<0.001) {p.value<-0.001} else if (p.value>0.001&p.value<0.01) {p.value<-0.01} else if(p.value>0.01&p.value<0.05) {p.value<-0.05} else p.value<-"NS"
+ #emod$p.value[2]<-p.value
+ emod$r.squared.marg<-r.squaredGLMM(mod)[1]
+ emod$r.squared.cond<-r.squaredGLMM(mod)[2]
+ 
+ ggplot(avg.yield.d,aes(GapWet,avg.kg)) + geom_point() + stat_smooth(method="lm")+
+   xlab("Canopy Gap in Wet Season [%]") + ylab("Average Inter-annual\nShrub Yield [kg]") + ggtitle("Doraani Plots") +
+   geom_text(x=20,y=0.15,label=paste0("R2 =",signif(emod[1,"r.squared.marg"],3)))+
+   theme(
+     plot.background = element_blank()
+     ,panel.background = element_blank()
+     ,panel.grid.major = element_blank()
+     ,panel.grid.minor = element_blank()
+     ,panel.border = element_blank()
+     ,axis.line.x = element_line(color = 'black')
+     ,axis.line.y = element_line(color = 'black')
+     #,legend.key=element_blank()
+     ,legend.position="none"
+     ,text = element_text(size=15)
+   )
+ ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.doraani.avgyield.vs.GapWet.pdf"))
+ 
+
+ mod<-lm(avg.kg~ah.fruit,data=avg.yield.y)
+ 
+ g1<-ggplot(avg.yield.y %>% filter(year!=2014),aes(ah.fruit,avg.kg)) + geom_point(aes(color=factor(year))) + stat_smooth(method="lm",aes(group=factor(year),color=factor(year)))+
+   scale_color_discrete(name="Year")+ xlab("AH During Berry Development [kg/m3]") + ylab("Average Inter-annual\nShrub Yield [kg]") + ggtitle("Yayu Plots: Absolute Humidity") +
+   geom_text(x=16,y=0.5,label=paste0("R2 =",signif(r.squaredGLMM(mod)[1],2)))+
+   theme(
+     plot.background = element_blank()
+     ,panel.background = element_blank()
+     ,panel.grid.major = element_blank()
+     ,panel.grid.minor = element_blank()
+     ,panel.border = element_blank()
+     ,axis.line.x = element_line(color = 'black')
+     ,axis.line.y = element_line(color = 'black')
+     #,legend.key=element_blank()
+     ,legend.justification=c(1,1), legend.position=c(1,1)
+     ,legend.key = element_blank()
+     ,text = element_text(size=15)
+   )
+ 
+ mod1<-lm(avg.kg~elevation,data=avg.yield.y)
+ 
+ g2<-ggplot(avg.yield.y,aes(elevation,avg.kg)) + geom_point() + stat_smooth(method="lm")+
+   xlab("Elevation [m]") + ylab("Average Inter-annual\nShrub Yield [kg]") + ggtitle("Elevation") +
+   geom_text(x=1400,y=0.5,label=paste0("R2 =",signif(r.squaredGLMM(mod1)[1],2)))+
+   theme(
+     plot.background = element_blank()
+     ,panel.background = element_blank()
+     ,panel.grid.major = element_blank()
+     ,panel.grid.minor = element_blank()
+     ,panel.border = element_blank()
+     ,axis.line.x = element_line(color = 'black')
+     ,axis.line.y = element_line(color = 'black')
+     #,legend.key=element_blank()
+     ,legend.justification=c(1,1), legend.position=c(1,1)
+     ,legend.key = element_blank()
+     ,text = element_text(size=15)
+   )
+ 
+ mod2<-lm(avg.kg~BA.legume,data=avg.yield.y %>% filter(year==2015))
+ 
+ g3<-ggplot(avg.yield.y %>% filter(year==2015),aes(BA.legume,avg.kg)) + geom_point() + stat_smooth(method="lm")+
+   xlab("Basal Area [m2/ha]") + ylab("Average Inter-annual\nShrub Yield [kg]") + ggtitle("Leguminous Shade Trees") +
+   geom_text(x=2.5,y=0.5,label=paste0("R2 =",signif(r.squaredGLMM(mod2)[1],2)))+
+   theme(
+     plot.background = element_blank()
+     ,panel.background = element_blank()
+     ,panel.grid.major = element_blank()
+     ,panel.grid.minor = element_blank()
+     ,panel.border = element_blank()
+     ,axis.line.x = element_line(color = 'black')
+     ,axis.line.y = element_line(color = 'black')
+     #,legend.key=element_blank()
+     ,legend.justification=c(1,1), legend.position=c(1,1)
+     ,legend.key = element_blank()
+     ,text = element_text(size=15)
+   )
+ 
+ g4<-grid.arrange(g1,g2,g3,ncol=3)
+ ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.yayu.avgyield.plots.pdf"),g4,width=12,height=4)
+ 
+ rm(avg.yield.d,avg.yield.y,g1,g2,g3,g4,mod,mod1,mod2,mod3,emod,emod1,avg.yield,tmp2)
+ 
+ #plot buffer vs density, %N, canopy gap in dry season, tavg.flower  (Yayu)
+ buffer<-d.F %>% filter(kebele!="Badessa"&kebele!="Weyra") %>% select(Plot,year,buffer,density,N.pct,GapDry,tavg.flower) 
+# %>% group_by(Plot,buffer) %>%
+  #summarise(ah.fruit=mean(ah.fruit,na.rm=T),pH=mean(pH,na.rm=T),Ca.meq=mean(Ca.meq,na.rm=T),eCEC.mol.kg=mean(eCEC.mol.kg,na.rm=T))
+ 
+g2<- ggplot(buffer,aes(factor(buffer),N.pct)) + geom_boxplot()+xlab("Land Cover Type (1=buffer,0=transition)")+
+   ylab("Soil N [%]") + ggtitle("Yayu Plots: Soil N")+theme(
+     plot.background = element_blank()
+     ,panel.background = element_blank()
+     ,panel.grid.major = element_blank()
+     ,panel.grid.minor = element_blank()
+     ,panel.border = element_blank()
+     ,axis.line.x = element_line(color = 'black')
+     ,axis.line.y = element_line(color = 'black')
+     #,legend.key=element_blank()
+     ,legend.justification=c(1,1), legend.position=c(1,1)
+     ,legend.key = element_blank()
+     ,text = element_text(size=15)
+   )
+ 
+g1<- ggplot(buffer,aes(factor(buffer),density)) + geom_boxplot()+xlab("Land Cover Type (1=buffer,0=transition)")+
+  ylab("Coffee Density [ha-1]") + ggtitle("Yayu Plots: Coffee Density")+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+g3<- ggplot(buffer,aes(factor(buffer),GapDry)) + geom_boxplot()+xlab("Land Cover Type (1=buffer,0=transition)")+
+  ylab("Canopy Gap in Dry Season [%]") + ggtitle("Yayu Plots: Canopy Gap")+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+g4<- ggplot(buffer,aes(factor(buffer),tavg.flower)) + geom_boxplot()+xlab("Land Cover Type (1=buffer,0=transition)")+
+  ylab("Avg Temp During Flowering") + ggtitle("Yayu Plots: Average Temperature")+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+g5<-grid.arrange(g1,g2,g3,g4,ncol=4)
+ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.yayu.buffer.plots.pdf"),g5,width=16,height=4)
+rm(g1,g2,g3,g4,g5,buffer)
+
+#plot total coffee area vs BA.shade (+ nope), N.pct,C.pct, soil Ca, soil Mg and eCEC and vpd.flower,tavg.flower,tmax.flower (Yayu)
+coffee.area<-d.F %>% filter(kebele!="Badessa"&kebele!="Weyra") %>% select(Plot,year,coffee.area.ha,BA.shade,C.pct,N.pct,Ca.meq,Mg.meq,eCEC.mol.kg,tavg.flower,tmax.flower,vpd.flower) 
+
+mod<-lm(C.pct~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g1<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,C.pct)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Soil C [%]") + ggtitle("Soil Carbon")+
+  geom_text(x=10,y=6,label=paste0("R2 =",signif(r.squaredGLMM(mod)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod1<-lm(N.pct~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g2<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,N.pct)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Soil N [%]") + ggtitle("Soil Nitrogen")+
+  geom_text(x=10,y=0.5,label=paste0("R2 =",signif(r.squaredGLMM(mod1)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod2<-lm(Mg.meq~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g3<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,Mg.meq)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Soil Mg [meq]") + ggtitle("Soil Magnesium")+
+  geom_text(x=10,y=40,label=paste0("R2 =",signif(r.squaredGLMM(mod2)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod3<-lm(Ca.meq~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g4<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,Ca.meq)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Soil Ca [meq]") + ggtitle("Soil Calcium")+
+  geom_text(x=10,y=40,label=paste0("R2 =",signif(r.squaredGLMM(mod3)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod4<-lm(eCEC.mol.kg~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g5<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,eCEC.mol.kg)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Soil eCEC [mol/kg]") + ggtitle("Soil eCEC")+
+  geom_text(x=10,y=80,label=paste0("R2 =",signif(r.squaredGLMM(mod4)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod5<-lm(tavg.flower~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g6<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,tavg.flower)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Avg Temp During Flowering") + ggtitle("Average Temperature")+
+  geom_text(x=10,y=27,label=paste0("R2 =",signif(r.squaredGLMM(mod5)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod6<-lm(tmax.flower~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g7<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,tmax.flower)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("Max Temp During Flowering") + ggtitle("Maximum Temperature")+
+  geom_text(x=10,y=40,label=paste0("R2 =",signif(r.squaredGLMM(mod6)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod7<-lm(vpd.flower~coffee.area.ha,data=coffee.area %>% filter(coffee.area.ha<40))
+
+g8<-ggplot(coffee.area %>% filter(coffee.area.ha<40),aes(coffee.area.ha,vpd.flower)) + geom_point() + stat_smooth(method="lm") + xlab("Coffee Area [ha]") +
+  ylab("VPD During Flowering") + ggtitle("Vapour Pressure Deficit")+
+  geom_text(x=10,y=80,label=paste0("R2 =",signif(r.squaredGLMM(mod7)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+g9<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,ncol=4)
+ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.yayu.coffeearea.plots.pdf"),g9,width=12,height=6)
+rm(g1,g2,g3,g4,g5,g6,g7,g8,g9,coffee.area,mod,mod1,mod2,mod3,mod4,mod5,mod6,mod7)
+
+#plot labour vs buffer, pH, soil nutrients (Ca, Mg, Fe, eCEC) and shade diversity (Doraani)
+labour<-d.F %>% filter(kebele=="Badessa"|kebele=="Weyra") %>% select(Plot,year,labour,buffer,Shannon.i,pH,Ca.meq,Mg.meq,Fe.ppm,eCEC.mol.kg) 
+
+
+g1<-ggplot(labour,aes(factor(buffer),labour)) + geom_boxplot()+ xlab("Land Cover Type (1=buffer,0=transition)") +
+  ylab("Labour [days/ha]") + ggtitle("Doraani Plots: Buffer")+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod<-lm(labour~pH,data=labour)
+
+g2<-ggplot(labour,aes(pH,labour)) + geom_point()+ xlab("Soil pH") + stat_smooth(method="lm")+
+  ylab("Labour [days/ha]") + ggtitle("Soil pH")+
+  geom_text(x=4.25,y=750,label=paste0("R2 =",signif(r.squaredGLMM(mod)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod1<-lm(labour~Ca.meq,data=labour)
+
+g3<-ggplot(labour,aes(Ca.meq,labour)) + geom_point()+ xlab("Soil Ca [meq]") + stat_smooth(method="lm")+
+  ylab("Labour [days/ha]") + ggtitle("Soil Calcium")+
+  geom_text(x=15,y=750,label=paste0("R2 =",signif(r.squaredGLMM(mod1)[1],2)))+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod2<-lm(labour~Mg.meq,data=labour)
+
+g4<-ggplot(labour,aes(Mg.meq,labour)) + geom_point()+ xlab("Soil Mg [meq]") + stat_smooth(method="lm")+
+  ylab("Labour [days/ha]") + ggtitle("Soil Magnesium")+
+  geom_text(x=15,y=750,label=paste0("R2 =",signif(r.squaredGLMM(mod2)[1],2)))+
+    theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod3<-lm(labour~Fe.ppm,data=labour)
+
+g5<-ggplot(labour,aes(Fe.ppm,labour)) + geom_point()+ xlab("Soil Fe [ppm]") + stat_smooth(method="lm")+
+  ylab("Labour [days/ha]") + ggtitle("Soil Iron")+
+  geom_text(x=0.15,y=750,label=paste0("R2 =",signif(r.squaredGLMM(mod3)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod4<-lm(labour~eCEC.mol.kg,data=labour)
+
+g6<-ggplot(labour,aes(eCEC.mol.kg,labour)) + geom_point()+ xlab("Soil eCEC [mol/kg]") + stat_smooth(method="lm")+
+  ylab("Labour [days/ha]") + ggtitle("Soil eCEC")+
+  geom_text(x=30,y=750,label=paste0("R2 =",signif(r.squaredGLMM(mod4)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod5<-lm(labour~Shannon.i,data=labour %>% filter(year==2015))
+
+g7<-ggplot(labour %>% filter(year==2015),aes(Shannon.i,labour)) + geom_point()+ xlab("Shannon Index") + stat_smooth(method="lm")+
+  ylab("Labour [days/ha]") + ggtitle("Shade Tree Diversity")+
+  geom_text(x=1,y=750,label=paste0("R2 =",signif(r.squaredGLMM(mod5)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+g8<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=4)
+ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.doraani.Labour.plots.pdf"),g8,width=12,height=6)
+
+rm(g1,g2,g3,g4,g5,g6,g7,g8,labour,mod,mod1,mod2,mod3,mod4,mod5)
+
+#plot patch area vs elevation, buffer, pH, composting, BA.legume, BA.deciduous and ah.fruit (Doraani)
+patch<-d.F %>% filter(kebele=="Badessa"|kebele=="Weyra") %>% select(Plot,year,patcharea,elevation,buffer,pH,compost,BA.legume,BA.deciduous,ah.fruit) 
+
+g1<-ggplot(patch,aes(factor(buffer),patcharea)) + geom_boxplot()+ xlab("Land Cover Type (1=buffer,0=transition)") +
+  ylab("Forest Patch Area [ha]") + ggtitle("Doraani Plots: Buffer")+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod<-lm(patcharea~elevation,data=patch)
+
+g2<-ggplot(patch,aes(elevation,patcharea)) + geom_point()+ xlab("Elevation [m]") + stat_smooth(method="lm") +
+  ylab("Forest Patch Area Area [ha]") + ggtitle("Elevation")+
+  geom_text(x=1725,y=800,label=paste0("R2 =",signif(r.squaredGLMM(mod)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod1<-lm(patcharea~pH,data=patch)
+
+g3<-ggplot(patch,aes(pH,patcharea)) + geom_point()+ xlab("Soil pH") + stat_smooth(method="lm") +
+  ylab("Forest Patch Area Area [ha]") + ggtitle("Soil pH")+
+  geom_text(x=4.5,y=800,label=paste0("R2 =",signif(r.squaredGLMM(mod1)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod2<-lm(compost~patcharea,data=patch)
+
+g4<-ggplot(patch,aes(patcharea,compost)) + geom_point()+ ylab("Composting [kg/ha]") + stat_smooth(method="lm") +
+  xlab("Forest Patch Area Area [ha]") + ggtitle("Composting")+
+  geom_text(x=250,y=800,label=paste0("R2 =",signif(r.squaredGLMM(mod2)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod3<-lm(BA.legume~patcharea,data=patch)
+
+g5<-ggplot(patch,aes(patcharea,BA.legume)) + geom_point()+ ylab("Basal Area [m2/ha]") + stat_smooth(method="lm") +
+  xlab("Forest Patch Area Area [ha]") + ggtitle("Leguminous Shade Trees")+
+  geom_text(x=250,y=10,label=paste0("R2 =",signif(r.squaredGLMM(mod3)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod4<-lm(BA.deciduous~patcharea,data=patch)
+
+g6<-ggplot(patch,aes(patcharea,BA.deciduous)) + geom_point()+ ylab("Basal Area [m2/ha]") + stat_smooth(method="lm") +
+  xlab("Forest Patch Area Area [ha]") + ggtitle("Deciduous Shade Trees")+
+  geom_text(x=250,y=50,label=paste0("R2 =",signif(r.squaredGLMM(mod4)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(1,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+  )
+
+mod5<-lm(ah.fruit~patcharea,data=patch %>% filter(ah.fruit>10))
+
+g7<-ggplot(patch %>% filter(ah.fruit>10),aes(patcharea,ah.fruit)) + geom_point(aes(color=factor(year)))+ ylab("Absolute Humidity [kg/m3]") + stat_smooth(method="lm") +
+  xlab("Forest Patch Area Area [ha]") + ggtitle("AH During Berry Development")+scale_color_discrete(name="Year")+
+  geom_text(x=250,y=13,label=paste0("R2 =",signif(r.squaredGLMM(mod5)[1],2)))+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    #,legend.key=element_blank()
+    ,legend.justification=c(1,1), legend.position=c(0.5,1)
+    ,legend.key = element_blank()
+    ,text = element_text(size=15)
+    ,legend.text=element_text(size=10)
+    ,legend.background = element_blank()
+  )
+
+g8<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=4)
+ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.doraani.patcharea.plots.pdf"),g8,width=12,height=6)

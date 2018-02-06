@@ -370,7 +370,7 @@ tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing
 #order by importance
 tmp<-tmp[!is.na(tmp$Importance),]
 
-g1<-ggplot(tmp, aes(x = Comparison, y = full, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
+g1<-ggplot(tmp, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
   theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Yayu Per Shrub Yield (2015 & 2016)")+
   xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme(
     plot.background = element_blank()
