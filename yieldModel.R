@@ -219,7 +219,7 @@ anova(fm001,fm001b,fm001c) #should use mixed models, for plot, Shrub.id and year
 #2015 & 2016
 #run it log
 am03 <- lmer(log(Shrub.kg.1)~ ah.flower + fruitset  + labour + CN.ratio + K.meq + propCLR + propCBD + propCBB + coffee.area.ha +
-               density + BA.legume + GapDry + elevation  + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F)
+               density + BA.legume + GapDry + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F)
 am03s<-standardize(am03)
 summary(am03)
 r.squaredGLMM(am03s)
@@ -391,13 +391,10 @@ cand.set<-list()
 cand.set[[1]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio + density  + fruitset  + GapDry + propCBB +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
 cand.set[[2]]<-standardize(lmer(log(Shrub.kg.1)~ BA.legume + CN.ratio + density + fruitset  + GapDry  +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
 cand.set[[3]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio +  density + fruitset  + GapDry +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
-cand.set[[4]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio  + fruitset  + GapDry  + propCBB +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
+cand.set[[4]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio  + fruitset  + GapDry + propCBB +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
 cand.set[[5]]<-standardize(lmer(log(Shrub.kg.1)~ BA.legume + CN.ratio + density  + fruitset + K.meq + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
-cand.set[[6]]<-standardize(lmer(log(Shrub.kg.1)~ ah.flower + BA.legume + density  +  elevation  + fruitset  + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
-cand.set[[7]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio + fruitset  + GapDry +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
-cand.set[[8]]<-standardize(lmer(log(Shrub.kg.1)~ BA.legume + density  +  elevation  + fruitset + labour + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
-cand.set[[9]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio + density + fruitset + K.meq + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
-cand.set[[10]]<-standardize(lmer(log(Shrub.kg.1)~ ah.flower + BA.legume + density  +  elevation  + fruitset + K.meq + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
+cand.set[[6]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio + fruitset  + GapDry  + (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
+cand.set[[7]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio + density + fruitset  + GapDry + K.meq +  (1|Plot/Shrub.id) + (1|year),data=df.hi,REML=F))
 
 ##create a vector of names to trace back models in set
 Modnames <- paste("mod", 1:length(cand.set), sep = " ")
@@ -443,7 +440,7 @@ tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_doraani.lnorm_delta2.co
 tmp<-tmp[!is.na(tmp$full),]
 
 #for delta 2
-tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"],labels=c("Labour","Absolute Humidity\nDuring Flowering","Elevation","Soil K","Proportion of\nBerries w/ CBB","Basal Area of\nLeguminous Shade Trees","Canopy Gap\nin Dry Season","Coffee Density","Soil C:N" ,"Fruitset","(Intercept)"))
+tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"],labels=c("Soil K","Basal Area of\nLeguminous Shade Trees","Proportion of\nBerries w/ CBB","Coffee Density","Canopy Gap\nin Dry Season","Soil C:N" ,"Fruitset","(Intercept)"))
 #tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"])
 
 #match by labels harder to identify
