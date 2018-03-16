@@ -1,12 +1,11 @@
 #Analysis of cocoa ES benefits/dis-benefits
 library(car)
-library(corrplot)
 library(MASS)
 library(MuMIn)
 library(arm)
 library(nlme)
 library(MCMCglmm)
-library(lattice)
+require(lattice)
 library(glmmLasso)
 library(tidyverse)
 library(AICcmodavg)
@@ -27,7 +26,7 @@ d.F[d.F$compost>0,"compost.bin"]<-1
 d.F$compost.bin<-factor(d.F$compost.bin)
 d.F$b.ffer<-factor(d.F$buffer)
 d.F$wereda<-"Yayu"
-d.F[d.F$kebele=="Badessa"|d.F$kebele=="Weyra","wereda"]<-"Doraani"
+d.F[d.F$kebele!="Badessa"&d.F$kebele!="Weyra","wereda"]<-"Doraani"
 d.F$wereda<-factor(d.F$wereda)
 
 #check which linking function I need, see how well values stay within dashed lines
@@ -35,7 +34,7 @@ d.F$Shrub.kg.1<- d.F$Shrub.kg + .00001
 
 #run log, 2014
 options(na.action = "na.omit")
-df.14<-d.F %>% filter(year==2014)
+df.14<-d.F[d.F$year==2014,]
 
 am.14 <- lmer(log(Shrub.kg.1)~ elevation*patcharea + b.ffer + coffee.area.ha  + compost.bin + CN.ratio  + Tot.P.ppm + K.meq + propCBD + 
                 propCBB + propCLR + BA.legume + Shannon.i + GapDry + prop.ldrop + wereda + (1|farm), data = df.14 ,REML=F)
@@ -43,9 +42,9 @@ am.14s<-standardize(am.14)
 summary(am.14s)
 r.squaredGLMM(am.14s)
 
-#add in soil pH, remove wereda
-am.14b <- lmer(log(Shrub.kg.1)~ elevation+patcharea + b.ffer  + compost.bin + CN.ratio  + Tot.P.ppm + K.meq + propCBD + pH +
-                 propCBB + BA.legume + Shannon.i + GapDry + prop.ldrop + (1|farm), data = df.14 ,REML=F)
+#try it by removing lowest correlation value per step
+am.14b <- lmer(log(Shrub.kg.1)~ elevation+patcharea + b.ffer  + compost.bin  + Tot.P.ppm + K.meq + propCBD + 
+                 propCBB + BA.legume + GapDry + prop.ldrop + wereda + (1|farm), data = df.14 ,REML=F)
 am.14bs<-standardize(am.14b)
 summary(am.14bs)
 r.squaredGLMM(am.14bs)
@@ -57,11 +56,11 @@ dredg.m14<-subset(am.14d,delta<2)
 write.csv(dredg.m14,paste0(getwd(),"/Analysis/ES/GLM.all.2014_dredged03.csv"))
 
 pdf(paste0(getwd(),"/Analysis/ES/Shrub.2014.lnorm_residuals.pdf"),width=8,height=5)
-bwplot(am.14bs@frame$farm~resid(am.14bs))
+bwplot(am.14b@frame$farm~resid(am.14b))
 dev.off()
 #plot standardized residuals versus fitted values by plot,
 #id identifies critical value (standarized residuals greater than 1-id/2 standard normal quantile in absolute value identified in plot)
-diagnos <- data.frame(Resid = resid(am.14bs, type = "pearson"), Fitted = fitted(am.14bs),Variable = df.14$farm[!is.na(df.14$propCLR)] )
+diagnos <- data.frame(Resid = resid(am.14b, type = "pearson"), Fitted = fitted(am.14b),Variable = df.14$farm[!is.na(df.14$propCLR)] )
 pdf(paste0(getwd(),"/Analysis/ES/Shrub.2014.lnorm_ResidualvFittedValues_all.pdf"),width=8,height=8)
 xyplot(Resid ~ Fitted, data = diagnos)
 dev.off()
@@ -99,7 +98,7 @@ Modnames <- paste("mod", 1:length(cand.set), sep = " ")
 #res.table <-aictab(cand.set = dredg.m14, modnames = Modnames, sort = TRUE)
 #write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_2014.d3.lnorm.delta2.csv"))
 
-topmodels.avg<-model.avg(cand.set) 
+topmodels.avg<-model.avg(dredg.m14) 
 sink(paste0(getwd(),"/Analysis/ES/Model.Average_2014.d3.lnorm.delta2.txt"))
 summary(topmodels.avg)
 sink() 
@@ -163,7 +162,7 @@ ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_2014.pdf"))
 
 #produce mean and sd for all variables of interest (elevation, BA.legume, Shannon.i, GapDry)
 #standardize variables
-df <- data.frame(cbind(as.character(df.14$farm),as.character(df.14$Shrub.id),as.character(df.14$wereda),df.14$Shrub.kg.1,rescale(df.14$GapDry),rescale(df.14$BA.legume),rescale(df.14$elevation),rescale(df.14$Shannon.i)),stringsAsFactors = F)
+df <- data.frame(cbind(as.character(df.15$farm),as.character(df.15$Shrub.id),as.character(df.15$wereda),df.15$Shrub.kg.1,rescale(df.15$GapDry),rescale(df.15$BA.legume),rescale(df.15$elevation),rescale(df.15$Shannon.i)),stringsAsFactors = F)
 colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.GapDry","z.BA.legume","z.elevation","z.Shannon.i")
 df[,4:ncol(df)]<-sapply(df[,4:ncol(df)],as.numeric)
 
@@ -197,43 +196,19 @@ ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yield_vs.obsyield.plot.2014.pdf"))
 
 #run log, 2015
 options(na.action = "na.omit")
-df.14<-d.F %>% filter(year==2014)
-
-df.15<-d.F %>% filter(year==2015)
-Shrub.kg.14<- df.14  %>% group_by(Plot) %>% summarise(Shrub.kg.14=mean(Shrub.kg.1,na.rm=T))
-prop.ldrop.14 <- df.14  %>% group_by(Plot) %>% summarise(prop.ldrop.14=mean(prop.ldrop,na.rm=T)) %>% mutate(prop.ldrop.14=replace(prop.ldrop.14,is.na(prop.ldrop.14),0))
-prop.fdrop.14 <- df.14 %>% group_by(Plot) %>% summarise(prop.fdrop.14=mean(fruit.drop/Tot.fruits,na.rm=T)) %>% mutate(prop.fdrop.14=replace(prop.fdrop.14,is.na(prop.fdrop.14),0))
-
-df.15<-left_join(df.15,Shrub.kg.14,by="Plot")
-df.15<-left_join(df.15,prop.ldrop.14 ,by="Plot")
-df.15<-left_join(df.15,prop.fdrop.14 ,by="Plot")
-
-#check correlation
+df.15<-d.F[d.F$year==2015,]
 
 am.15 <- lmer(log(Shrub.kg.1)~ elevation+patcharea + b.ffer + coffee.area.ha + fruitset  + labour + CN.ratio  + K.meq + propCBD + 
                 propCBB + propCLR + BA.legume +GapDry + wereda + (1|farm), data = df.15 ,REML=F)
-#add lag effects
-am.15 <- lmer(log(Shrub.kg.1)~ Shrub.kg.14+prop.ldrop.14+elevation+patcharea + coffee.area.ha + fruitset  + labour + CN.ratio  + K.meq + Tot.P.ppm + pH + propCBD + 
-                propCBB + propCLR + BA.legume +GapDry + (1|farm), data = df.15 ,REML=F)
-
 am.15s<-standardize(am.15)
 summary(am.15s)
 r.squaredGLMM(am.15s)
 
-#remove less significant values
-am.15b <- lmer(log(Shrub.kg.1)~ Shrub.kg.14+prop.ldrop.14+patcharea  + fruitset  + labour + CN.ratio  + K.meq + Tot.P.ppm + 
-               BA.legume +GapDry + (1|farm), data = df.15 ,REML=F)
-
-am.15bs<-standardize(am.15b)
-summary(am.15bs)
-r.squaredGLMM(am.15bs)
-
-#vcov(am.15s)
 options(na.action = "na.fail")
 am.15d<-dredge(am.15s)
 
-dredg.m15<-subset(am.15db,delta<6)
-write.csv(dredg.m15,paste0(getwd(),"/Analysis/ES/GLM.all.2015_dredged02.csv"))
+dredg.m15<-subset(am.15d,delta<2)
+write.csv(dredg.m15,paste0(getwd(),"/Analysis/ES/GLM.all.2015_dredged03.csv"))
 
 pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.lnorm_residuals.pdf"),width=8,height=5)
 bwplot(am.15s@frame$farm~resid(am.15s))
@@ -263,10 +238,10 @@ dev.off()
 #for 2015
 cand.set<-list()
 #delta 2 has sixmodels
-cand.set[[1]]<-standardize(lmer(log(Shrub.kg.1)~ BA.legume + CN.ratio + patcharea + Tot.P.ppm + (1|farm), data = df.15 ,REML=F))
-cand.set[[2]]<-standardize(lmer(log(Shrub.kg.1)~ CN.ratio + patcharea + Tot.P.ppm + (1|farm), data = df.15  ,REML=F))
-cand.set[[3]]<-standardize(lmer(log(Shrub.kg.1)~ BA.legume + patcharea + (1|farm), data = df.15 ,REML=F))
-cand.set[[4]]<-standardize(lmer(log(Shrub.kg.1)~ BA.legume + CN.ratio + patcharea + Shrub.kg.14 + (1|farm), data = df.15 ,REML=F))
+cand.set[[1]]<-standardize(lmer(log(Shrub.kg.1)~ elevation + BA.legume + CN.ratio + patcharea + (1|farm), data = df.15 ,REML=F))
+cand.set[[2]]<-standardize(lmer(log(Shrub.kg.1)~ elevation + BA.legume + patcharea + (1|farm), data = df.15  ,REML=F))
+cand.set[[3]]<-standardize(lmer(log(Shrub.kg.1)~ wereda + BA.legume + patcharea + (1|farm), data = df.15 ,REML=F))
+cand.set[[4]]<-standardize(lmer(log(Shrub.kg.1)~ elevation + BA.legume + b.ffer + (1|farm), data = df.15 ,REML=F))
 
 ##create a vector of names to trace back models in set
 Modnames <- paste("mod", 1:length(cand.set), sep = " ")
@@ -312,7 +287,7 @@ tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2015.lnorm_delta2.confi
 tmp<-tmp[!is.na(tmp$full),]
 
 #for delta 2
-tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=T),"Comparison"],labels=c("Patch Area","Soil C:N","Basal Area of\nLeguminous Shade Trees","Total Soil P","Shrub Yield in 2014","(Intercept)"))
+tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=T),"Comparison"],labels=c("Basal Area of\nLeguminous Shade Trees","Patch Area","Elevation","Soil C:N","Wereda: Yayu","Location in Buffer","(Intercept)"))
 tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"])
 
 #match by labels harder to identify
@@ -339,16 +314,16 @@ ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_2015.pdf"))
 
 
 #standardize variables
-df <- data.frame(cbind(as.character(df.15$farm),as.character(df.15$Shrub.id),as.character(df.15$wereda),df.15$Shrub.kg.1,rescale(df.15$patcharea),rescale(df.15$BA.legume),rescale(df.15$Tot.P.ppm),rescale(df.15$CN.ratio),rescale(df.15$Shrub.kg.14)),stringsAsFactors = F)
-colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.patcharea","z.BA.legume","z.Tot.P.ppm","z.CN.ratio","z.Shrub.kg.14")
+df <- data.frame(cbind(as.character(df.15$farm),as.character(df.15$Shrub.id),as.character(df.15$wereda),df.15$Shrub.kg.1,rescale(df.15$patcharea),rescale(df.15$BA.legume),rescale(df.15$elevation),rescale(df.15$CN.ratio),rescale(df.15$b.ffer),rescale(df.15$wereda)),stringsAsFactors = F)
+colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.patcharea","z.BA.legume","z.elevation","z.CN.ratio","c.buffer","c.wereda")
 df[,4:ncol(df)]<-sapply(df[,4:ncol(df)],as.numeric)
 
 tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2015.lnorm_delta2.confint.csv"))
 tmp<-tmp[!is.na(tmp$full),]
 
 #test validity of the model
-df<-df %>% group_by(farm,wereda,Shrub.id) %>% mutate(shrub.kg.mod=exp(tmp[tmp$Comparison=="(Intercept)","Estimate"]+tmp[tmp$Comparison=="z.Tot.P.ppm","Estimate"]*z.Tot.P.ppm+tmp[tmp$Comparison=="z.CN.ratio","Estimate"]*z.CN.ratio+tmp[tmp$Comparison=="z.BA.legume","Estimate"]*z.BA.legume+
-                                                                        tmp[tmp$Comparison=="z.patcharea","Estimate"]*z.patcharea+tmp[tmp$Comparison=="z.Shrub.kg.14","Estimate"]*z.Shrub.kg.14))
+df<-df %>% group_by(farm,wereda,Shrub.id) %>% mutate(shrub.kg.mod=exp(tmp[tmp$Comparison=="(Intercept)","Estimate"]+tmp[tmp$Comparison=="z.elevation","Estimate"]*z.elevation+tmp[tmp$Comparison=="z.CN.ratio","Estimate"]*z.CN.ratio+tmp[tmp$Comparison=="z.BA.legume","Estimate"]*z.BA.legume+
+                                                                        tmp[tmp$Comparison=="z.patcharea","Estimate"]*z.patcharea+tmp[tmp$Comparison=="c.wereda","Estimate"]*c.wereda+tmp[tmp$Comparison=="c.b.ffer","Estimate"]*c.buffer))
 
 #take median of each observed farm
 df.med<- df %>% group_by(farm,wereda) %>% summarise(Shrub.kg.1=median(Shrub.kg.1,na.rm=T),shrub.kg.mod=mean(shrub.kg.mod,na.rm=T))
@@ -372,33 +347,12 @@ ggplot(df.med,aes(Shrub.kg.1,shrub.kg.mod)) + geom_point(aes(color=factor(wereda
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yield_vs.obsyield.plot.2015.pdf"))
 
 
-#run log, 2016, add in lag effects
-df.14<-d.F %>% filter(year==2014)
-df.15<-d.F %>% filter(year==2015)
-
-Shrub.kg.14<- df.14  %>% group_by(Plot) %>% summarise(Shrub.kg.14=mean(Shrub.kg.1,na.rm=T))
-prop.ldrop.14 <- df.14  %>% group_by(Plot) %>% summarise(prop.ldrop.14=mean(prop.ldrop,na.rm=T)) %>% mutate(prop.ldrop.14=replace(prop.ldrop.14,is.na(prop.ldrop.14),0))
-prop.fdrop.14 <- df.14 %>% group_by(Plot) %>% summarise(prop.fdrop.14=mean(fruit.drop/Tot.fruits,na.rm=T)) %>% mutate(prop.fdrop.14=replace(prop.fdrop.14,is.na(prop.fdrop.14),0))
-
-Shrub.kg.15<- df.15  %>% group_by(Plot) %>% summarise(Shrub.kg.15=mean(Shrub.kg.1,na.rm=T))
-prop.ldrop.15 <- df.15  %>% group_by(Plot) %>% summarise(prop.ldrop.15=mean(prop.ldrop,na.rm=T)) %>% mutate(prop.ldrop.15=replace(prop.ldrop.15,is.na(prop.ldrop.15),0))
-prop.fdrop.15 <- df.15 %>% group_by(Plot) %>% summarise(prop.fdrop.15=mean(fruit.drop/Tot.fruits,na.rm=T)) %>% mutate(prop.fdrop.15=replace(prop.fdrop.15,is.na(prop.fdrop.15),0))
-
+#run log, 2016
+options(na.action = "na.omit")
 df.16<-d.F[d.F$year==2016,]
 
-df.16<-left_join(df.16,Shrub.kg.14,by="Plot")
-df.16<-left_join(df.16,prop.ldrop.14 ,by="Plot")
-df.16<-left_join(df.16,prop.fdrop.14 ,by="Plot")
-
-df.16<-left_join(df.16,Shrub.kg.15,by="Plot")
-df.16<-left_join(df.16,prop.ldrop.15 ,by="Plot")
-df.16<-left_join(df.16,prop.fdrop.15 ,by="Plot")
-
-options(na.action = "na.omit")
-
-
-am.16 <- lmer(Shrub.kg.1~ Shrub.kg.14+ Shrub.kg.15+prop.ldrop.15+prop.fdrop.15 + elevation + patcharea  + fruitset  + labour + CN.ratio  + K.meq + Tot.P.ppm + pH +
-                propCBB + propCBD + propCLR + BA.legume + GapDry + Shannon.i + b.ffer+ (1|farm), data = df.16 ,REML=F)
+am.16 <- lmer(Shrub.kg.1~ elevation+patcharea + b.ffer + coffee.area.ha + fruitset  + labour + CN.ratio  + K.meq + propCBD + 
+                propCBB + propCLR + BA.legume +GapDry + wereda + (1|farm), data = df.16 ,REML=F)
 am.16s<-standardize(am.16)
 summary(am.16s)
 r.squaredGLMM(am.16s)
@@ -407,7 +361,7 @@ options(na.action = "na.fail")
 am.16d<-dredge(am.16s)
 
 dredg.m16<-subset(am.16d,delta<2)
-write.csv(dredg.m16,paste0(getwd(),"/Analysis/ES/GLM.all.2016_dredged02.csv"))
+write.csv(dredg.m16,paste0(getwd(),"/Analysis/ES/GLM.all.2016_dredged01.csv"))
 
 pdf(paste0(getwd(),"/Analysis/ES/Shrub.2016.lnorm_residuals.pdf"),width=8,height=5)
 bwplot(am.16s@frame$farm~resid(am.16s))
@@ -437,15 +391,16 @@ dev.off()
 #for 2016
 cand.set<-list()
 #delta 2 has sixmodels
-cand.set[[1]]<-standardize(lmer(Shrub.kg.1~ elevation + CN.ratio + GapDry + Shrub.kg.14+ (1|farm), data = df.16 ,REML=F))
-cand.set[[2]]<-standardize(lmer(Shrub.kg.1~ elevation  + b.ffer + Shrub.kg.14 + (1|farm), data = df.16  ,REML=F))
-cand.set[[3]]<-standardize(lmer(Shrub.kg.1~ elevation + CN.ratio + Shannon.i + Shrub.kg.14 + (1|farm), data = df.16 ,REML=F))
+cand.set[[1]]<-standardize(lmer(Shrub.kg.1~ elevation + CN.ratio + GapDry + (1|farm), data = df.16 ,REML=F))
+cand.set[[2]]<-standardize(lmer(Shrub.kg.1~ elevation + CN.ratio + b.ffer + (1|farm), data = df.16  ,REML=F))
+cand.set[[3]]<-standardize(lmer(Shrub.kg.1~ elevation + CN.ratio + (1|farm), data = df.16 ,REML=F))
 cand.set[[4]]<-standardize(lmer(Shrub.kg.1~ elevation + b.ffer + (1|farm), data = df.16 ,REML=F))
-cand.set[[5]]<-standardize(lmer(Shrub.kg.1~ elevation  + GapDry + Shrub.kg.14 + (1|farm), data = df.16  ,REML=F))
-cand.set[[6]]<-standardize(lmer(Shrub.kg.1~ CN.ratio + elevation  + Shrub.kg.14 + (1|farm), data = df.16 ,REML=F))
-cand.set[[7]]<-standardize(lmer(Shrub.kg.1~ elevation  + Shrub.kg.14 + (1|farm), data = df.16 ,REML=F))
-cand.set[[8]]<-standardize(lmer(Shrub.kg.1~ Shannon.i + (1|farm), data = df.16 ,REML=F))
-cand.set[[9]]<-standardize(lmer(Shrub.kg.1~ CN.ratio + elevation + Shannon.i + (1|farm), data = df.16 ,REML=F))
+cand.set[[5]]<-standardize(lmer(Shrub.kg.1~ elevation + (1|farm), data = df.16  ,REML=F))
+cand.set[[6]]<-lmer(Shrub.kg.1~ 1+ (1|farm), data =df.16  ,REML=F)
+cand.set[[7]]<-standardize(lmer(Shrub.kg.1~ CN.ratio + GapDry + (1|farm), data = df.16 ,REML=F))
+cand.set[[8]]<-standardize(lmer(Shrub.kg.1~ GapDry + (1|farm), data = df.16 ,REML=F))
+cand.set[[9]]<-standardize(lmer(Shrub.kg.1~ CN.ratio + wereda + (1|farm), data = df.16 ,REML=F))
+cand.set[[10]]<-standardize(lmer(Shrub.kg.1~ CN.ratio  + (1|farm), data = df.16 ,REML=F))
 
 ##create a vector of names to trace back models in set
 Modnames <- paste("mod", 1:length(cand.set), sep = " ")
@@ -491,7 +446,7 @@ tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2016.lnorm_delta2.confi
 tmp<-tmp[!is.na(tmp$full),]
 
 #for delta 2
-tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=T),"Comparison"],labels=c("Elevation","Shrub Yield 2014","Soil C:N","Canopy Gap in Dry Season","Diversity of Shade Trees","Location in Buffer","(Intercept)"))
+tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=T),"Comparison"],labels=c("Elevation","Soil C:N","Canopy Gap in Dry Season","Location in Buffer","Wereda","(Intercept)"))
 tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"])
 
 #match by labels harder to identify
@@ -518,16 +473,16 @@ ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_2016.pdf"))
 
 
 #standardize variables
-df <- data.frame(cbind(as.character(df.16$farm),as.character(df.16$Shrub.id),as.character(df.16$wereda),df.16$Shrub.kg.1,rescale(df.16$Shrub.kg.14),rescale(df.16$BA.legume),rescale(df.16$elevation),rescale(df.16$CN.ratio),rescale(df.16$b.ffer),rescale(df.16$GapDry),rescale(df.16$Shannon.i)),stringsAsFactors = F)
-colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.Shrub.kg.14","z.BA.legume","z.elevation","z.CN.ratio","c.buffer","z.GapDry","z.Shannon.i")
+df <- data.frame(cbind(as.character(df.15$farm),as.character(df.15$Shrub.id),as.character(df.15$wereda),df.15$Shrub.kg.1,rescale(df.15$patcharea),rescale(df.15$BA.legume),rescale(df.15$elevation),rescale(df.15$CN.ratio),rescale(df.15$b.ffer)),stringsAsFactors = F)
+colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.patcharea","z.BA.legume","z.elevation","z.CN.ratio","c.buffer")
 df[,4:ncol(df)]<-sapply(df[,4:ncol(df)],as.numeric)
 
-tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2016.lnorm_delta2.confint.csv"))
+tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2015.lnorm_delta2.confint.csv"))
 tmp<-tmp[!is.na(tmp$full),]
 
 #test validity of the model
-df<-df %>% group_by(farm,wereda,Shrub.id) %>% mutate(shrub.kg.mod=tmp[tmp$Comparison=="(Intercept)","Estimate"]+tmp[tmp$Comparison=="z.elevation","Estimate"]*z.elevation+tmp[tmp$Comparison=="z.CN.ratio","Estimate"]*z.CN.ratio+
-                                                                        tmp[tmp$Comparison=="z.Shrub.kg.14","Estimate"]*z.Shrub.kg.14+tmp[tmp$Comparison=="c.b.ffer","Estimate"]*c.buffer + tmp[tmp$Comparison=="z.GapDry","Estimate"]*z.GapDry+ tmp[tmp$Comparison=="z.Shannon.i","Estimate"]*z.Shannon.i)
+df<-df %>% group_by(farm,wereda,Shrub.id) %>% mutate(shrub.kg.mod=exp(tmp[tmp$Comparison=="(Intercept)","Estimate"]+tmp[tmp$Comparison=="z.elevation","Estimate"]*z.elevation+tmp[tmp$Comparison=="z.CN.ratio","Estimate"]*z.CN.ratio+tmp[tmp$Comparison=="z.BA.legume","Estimate"]*z.BA.legume+
+                                                                        tmp[tmp$Comparison=="z.patcharea","Estimate"]*z.patcharea+tmp[tmp$Comparison=="c.b.ffer","Estimate"]*c.buffer))
 
 #take median of each observed farm
 df.med<- df %>% group_by(farm,wereda) %>% summarise(Shrub.kg.1=median(Shrub.kg.1,na.rm=T),shrub.kg.mod=mean(shrub.kg.mod,na.rm=T))
@@ -535,7 +490,7 @@ df.med<- df %>% group_by(farm,wereda) %>% summarise(Shrub.kg.1=median(Shrub.kg.1
 ggplot(df.med,aes(Shrub.kg.1,shrub.kg.mod)) + geom_point(aes(color=factor(wereda))) + geom_abline(slope=1,intercept=0,linetype="dashed")+
   ylim(0,1.5)+xlim(0,1.5)+
   xlab("Observed per Shrub Yield [kg]")+ylab("Modelled per Shrub Yield [kg]")+scale_colour_discrete(name="Wereda")+
-  ggtitle("2016")+theme(
+  ggtitle("2015")+theme(
     plot.background = element_blank()
     ,panel.background = element_blank()
     ,panel.grid.major = element_blank()
@@ -548,74 +503,70 @@ ggplot(df.med,aes(Shrub.kg.1,shrub.kg.mod)) + geom_point(aes(color=factor(wereda
     ,legend.position="bottom"
     #,axis.text.x=element_text(angle = 45,hjust=1)
   )
-ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yield_vs.obsyield.plot.2016.pdf"))
+ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yield_vs.obsyield.plot.2015.pdf"))
 
-#look at predictability of drop in yields
-df.14<-d.F %>% filter(year==2014)
-df.15<-d.F %>% filter(year==2015)
-df.16<-d.F %>% filter(year==2016)
 
-Shrub.kg.14<- df.14  %>% group_by(Plot) %>% summarise(Shrub.kg.14=mean(Shrub.kg.1,na.rm=T))
-prop.ldrop.14 <- df.14  %>% group_by(Plot) %>% summarise(prop.ldrop.14=mean(prop.ldrop,na.rm=T)) %>% mutate(prop.ldrop.14=replace(prop.ldrop.14,is.na(prop.ldrop.14),0))
-prop.fdrop.14 <- df.14 %>% group_by(Plot) %>% summarise(prop.fdrop.14=mean(fruit.drop/Tot.fruits,na.rm=T)) %>% mutate(prop.fdrop.14=replace(prop.fdrop.14,is.na(prop.fdrop.14),0))
 
-Shrub.kg.15<- df.15  %>% group_by(Plot) %>% summarise(Shrub.kg.15=mean(Shrub.kg.1,na.rm=T))
-prop.ldrop.15 <- df.15  %>% group_by(Plot) %>% summarise(prop.ldrop.15=mean(prop.ldrop,na.rm=T)) %>% mutate(prop.ldrop.15=replace(prop.ldrop.15,is.na(prop.ldrop.15),0))
-prop.fdrop.15 <- df.15 %>% group_by(Plot) %>% summarise(prop.fdrop.15=mean(fruit.drop/Tot.fruits,na.rm=T)) %>% mutate(prop.fdrop.15=replace(prop.fdrop.15,is.na(prop.fdrop.15),0))
+#do weredas separately
+df.low<-d.F[d.F$kebele!="Badessa"&d.F$kebele!="Weyra",]
+df.hi<-d.F[d.F$kebele=="Badessa"|d.F$kebele=="Weyra",]
 
-Shrub.kg.16<- df.16  %>% group_by(Plot) %>% summarise(Shrub.kg.16=mean(Shrub.kg.1,na.rm=T))
-prop.ldrop.16 <- df.16  %>% group_by(Plot) %>% summarise(prop.ldrop.16=mean(prop.ldrop,na.rm=T)) %>% mutate(prop.ldrop.16=replace(prop.ldrop.16,is.na(prop.ldrop.16),0))
-prop.fdrop.16 <- df.16 %>% group_by(Plot) %>% summarise(prop.fdrop.16=mean(fruit.drop/Tot.fruits,na.rm=T)) %>% mutate(prop.fdrop.16=replace(prop.fdrop.16,is.na(prop.fdrop.16),0))
-
-df <- Shrub.kg.14
-df <- left_join(df,Shrub.kg.15)
-df <- left_join(df,Shrub.kg.16) %>% mutate(yld.14.16=Shrub.kg.16-Shrub.kg.14)
-df <- df %>% mutate(ID=1:nrow(df))
-
-qqp(df$yld.14.16, "norm")
-
-df <- left_join(df,df.14,by="Plot")
-#remove duplicates
-df<-df %>% distinct(ID.x, .keep_all = TRUE)
+#do 2014 for each wereda separately
+df.hi.14<- df.hi %>% filter(year==2014)
+qqp(df.hi.14$Shrub.kg.1, "lnorm")
 
 options(na.action = "na.omit")
-df<-df %>% filter(!is.na(yld.14.16))
-am.diff <- lm(yld.14.16~  elevation + patcharea + labour  + K.meq + Tot.P.ppm +
-                 BA.legume + GapDry + wereda , data = df)
-am.diffs<-standardize(am.diff)
-summary(am.diffs)
-r.squaredGLMM(am.diffs)
+
+am.14.d <-lmer(log(Shrub.kg.1)~ pH + Tot.P.ppm + density +  K.meq  + propCBD + propCLR + propCBB + BA.pioneer + GapDry +
+               patcharea + (1|Plot), data=df.hi.14,REML=F)
+am.14.ds<-standardize(am.14.d)
+summary(am.14.ds)
+r.squaredGLMM(am.14.ds)
 
 options(na.action = "na.fail")
-am.diffd<-dredge(am.diff)
+am.14.d<-dredge(am.14.d)
+dredg.m02<-subset(am.14.d,delta<2)
+write.csv(dredg.m02,paste0(getwd(),"/Analysis/ES/GLM.lnorm.doraani.2014_dredged02.csv"))
 
-dredg.diff<-subset(am.diffd,delta<2)
-write.csv(dredg.diff,paste0(getwd(),"/Analysis/ES/GLM.plot.diff2014.2016_dredged01.csv"))
-
-pdf(paste0(getwd(),"/Analysis/ES/GLM.plotdiff2014.16_diagnostics.pdf"), width=6, height=6)
-layout(matrix(1:4, ncol = 2))
-plot(am.diffs)
-layout(1)
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2014.doraani.lnorm_residuals.pdf"),width=8,height=5)
+bwplot(am.14.ds@frame$Plot~resid(am.14.ds))
+dev.off()
+#plot standardized residuals versus fitted values by plot,
+#id identifies critical value (standarized residuals greater than 1-id/2 standard normal quantile in absolute value identified in plot)
+diagnos <- data.frame(Resid = resid(am.14.ds, type = "pearson"), Fitted = fitted(am.14.ds),Variable = df.hi.14$Plot[!is.na(df.hi.14$propCLR)] )
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2014.doraani.lnorm_ResidualvFittedValues_all.pdf"),width=8,height=8)
+xyplot(Resid ~ Fitted, data = diagnos)
 dev.off()
 
-#for yield diff
+## separate by variable
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2014.doraani.lnorm_ResidualvFittedValues.pdf"),width=8,height=8)
+xyplot(Resid ~ Fitted | Variable, data = diagnos)
+dev.off()
+#Assumption 2: Random effects are normally distributed with mean zero and covariance matrix (not depending on the group) and are independent for different groups
+#test for normality of residuals
+## we could add a line to indicate 'normal' with a bit more work
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2014.doraani.lnorm_qqplotResiduals_byplot.pdf"),width=8,height=8)
+qqmath(~Resid | Variable, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
+       panel = function(x, ...) {
+         panel.qqmathline(x, ...)
+         panel.qqmath(x, ...)
+       })
+dev.off()
+
 cand.set<-list()
 #delta 2 has sixmodels
-cand.set[[1]]<-standardize(lm(yld.14.16~  elevation + K.meq  + BA.legume + GapDry + wereda , data = df))
-cand.set[[2]]<-standardize(lm(yld.14.16~  elevation  + BA.legume + GapDry + wereda , data = df))
-cand.set[[3]]<-standardize(lm(yld.14.16~  elevation  + BA.legume + wereda , data = df))
-cand.set[[4]]<-standardize(lm(yld.14.16~  elevation + GapDry + wereda , data = df))
-cand.set[[5]]<-standardize(lm(yld.14.16~  elevation + wereda , data = df))
+cand.set[[1]]<-standardize(lmer(log(Shrub.kg.1)~ pH + BA.pioneer + propCBD + Tot.P.ppm + (1|Plot), data = df.hi.14 ,REML=F))
+cand.set[[2]]<-standardize(lmer(log(Shrub.kg.1)~ BA.pioneer + propCBD + Tot.P.ppm + (1|Plot), data = df.hi.14  ,REML=F))
 
 ##create a vector of names to trace back models in set
 Modnames <- paste("mod", 1:length(cand.set), sep = " ")
 
 ##generate AICc table
 res.table <-aictab(cand.set = cand.set, modnames = Modnames, sort = TRUE)
-write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_2016.lnorm.delta2.csv"))
+write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_doraani.2014.lnorm.delta2.csv"))
 
 topmodels.avg<-model.avg(cand.set) 
-sink(paste0(getwd(),"/Analysis/ES/Model.Average_2016.lnorm.delta2.txt"))
+sink(paste0(getwd(),"/Analysis/ES/Model.Average_doraani.2014.lnorm.delta2.txt"))
 summary(topmodels.avg)
 sink() 
 
@@ -642,16 +593,16 @@ tmp[,4:7]<-vars.1[match(tmp$Comparison,vars.1$Parameter),2:5]
 #add importance
 tmp$Importance<-x1[match(tmp$Comparison,x1$Comparison),"Importance"]
 #write confidence intervals and order of importance
-write.csv(tmp,paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff.lnorm_delta2.confint.csv"))
+#write.csv(tmp,paste0(getwd(),"/Analysis/ES/Model.Average_2014.doraani.lnorm_delta2.confint.csv"))
 
 #order by importance
 #tmp<-tmp[!is.na(tmp$Importance),]
 #tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_HC",season,"_delta2.wooutlier.csv"))
-tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff.lnorm_delta2.confint.csv"))
+tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2014.doraani.lnorm_delta2.confint.csv"))
 tmp<-tmp[!is.na(tmp$full),]
 
 #for delta 2
-tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=T),"Comparison"],labels=c("Elevation","Wereda","Basal Area of Leguminous Trees","Canopy Gap in Dry Season","Soil K","(Intercept)"))
+tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=T),"Comparison"],labels=c("Basal Area of\nPioneer Shade Trees","Incidence of CBD","Total Soil P","Soil pH","(Intercept)"))
 tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"])
 
 #match by labels harder to identify
@@ -662,7 +613,7 @@ tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing
 tmp<-tmp[!is.na(tmp$Importance),]
 
 g1<-ggplot(tmp, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
-  theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on\nPer Shrub Yield (2016)")+
+  theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Per Shrub Yield (2014)")+
   xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme(
     plot.background = element_blank()
     ,panel.background = element_blank()
@@ -674,16 +625,176 @@ g1<-ggplot(tmp, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.
     ,text = element_text(size = 14)
     ,axis.text.x=element_text(angle = 45,hjust=1))
 g1+coord_flip()
-ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_ylddiff.pdf"))
+ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_2014.doraani.pdf"))
 
 
 #standardize variables
-df <- data.frame(cbind(as.character(df.16$farm),as.character(df.16$Shrub.id),as.character(df.16$wereda),df.16$Shrub.kg.1,rescale(df.16$Shrub.kg.14),rescale(df.16$BA.legume),rescale(df.16$elevation),rescale(df.16$CN.ratio),rescale(df.16$b.ffer),rescale(df.16$GapDry),rescale(df.16$Shannon.i)),stringsAsFactors = F)
-colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.Shrub.kg.14","z.BA.legume","z.elevation","z.CN.ratio","c.buffer","z.GapDry","z.Shannon.i")
-df[,4:ncol(df)]<-sapply(df[,4:ncol(df)],as.numeric)
+#df <- data.frame(cbind(as.character(df.15$farm),as.character(df.15$Shrub.id),as.character(df.15$wereda),df.15$Shrub.kg.1,rescale(df.15$patcharea),rescale(df.15$BA.legume),rescale(df.15$elevation),rescale(df.15$CN.ratio),rescale(df.15$b.ffer),rescale(df.15$wereda)),stringsAsFactors = F)
+#colnames(df)<-c("farm","Shrub.id","wereda","Shrub.kg.1","z.patcharea","z.BA.legume","z.elevation","z.CN.ratio","c.buffer","c.wereda")
+#df[,4:ncol(df)]<-sapply(df[,4:ncol(df)],as.numeric)
+
+#tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_2015.lnorm_delta2.confint.csv"))
+#tmp<-tmp[!is.na(tmp$full),]
+
+#test validity of the model
+#df<-df %>% group_by(farm,wereda,Shrub.id) %>% mutate(shrub.kg.mod=exp(tmp[tmp$Comparison=="(Intercept)","Estimate"]+tmp[tmp$Comparison=="z.elevation","Estimate"]*z.elevation+tmp[tmp$Comparison=="z.CN.ratio","Estimate"]*z.CN.ratio+tmp[tmp$Comparison=="z.BA.legume","Estimate"]*z.BA.legume+
+#tmp[tmp$Comparison=="z.patcharea","Estimate"]*z.patcharea+tmp[tmp$Comparison=="c.wereda","Estimate"]*c.wereda+tmp[tmp$Comparison=="c.b.ffer","Estimate"]*c.buffer))
+
+#take median of each observed farm
+#df.med<- df %>% group_by(farm,wereda) %>% summarise(Shrub.kg.1=median(Shrub.kg.1,na.rm=T),shrub.kg.mod=mean(shrub.kg.mod,na.rm=T))
+
+ggplot(df.med,aes(Shrub.kg.1,shrub.kg.mod)) + geom_point(aes(color=factor(wereda))) + geom_abline(slope=1,intercept=0,linetype="dashed")+
+  ylim(0,1.5)+xlim(0,1.5)+
+  xlab("Observed per Shrub Yield [kg]")+ylab("Modelled per Shrub Yield [kg]")+scale_colour_discrete(name="Wereda")+
+  ggtitle("2015")+theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,text = element_text(size = 14)
+    ,legend.key = element_blank()
+    ,legend.position="bottom"
+    #,axis.text.x=element_text(angle = 45,hjust=1)
+  )
+ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yield_vs.obsyield.plot.2015.pdf"))
+
+#Yayu plots
+df.low<-df.low %>% filter(year!="2014") %>% filter(!is.na(No.fruits))
+df.low.z <- data.frame(scale(df.low %>% select(-X.1,-X,-ID,-year,-Plot,-kebele,-tmax.flower,-tmax.fruit,-tavg.flower,-tavg.fruit,-vpd.flower,-vpd.fruit,-new.ah.fruit,-compost.bin,-buffer) ))
+df.low.z$Plot<-df.low$Plot
+df.low.z$Shrub.id<-df.low$Shrub.id
+df.low.z$year<-df.low$year
+df.low.z$Shrub.kg.1 <-df.low$Shrub.kg.1
+
+qqp(df.low$Shrub.kg.1, "norm")
+
+# lnorm means lognormal
+pdf(paste0(getwd(),"/Analysis/ES/Yayu_total_harvest.lnorm.pdf"))
+qqp(df.low$Shrub.kg.1, "lnorm")
+dev.off()
+
+# qqp requires estimates of the parameters of the negative binomial, Poisson # and gamma distributions. You can generate estimates using the fitdistr
+# function. Save the output and extract the estimates of each parameter as I # have shown below.
+#nbinom <- fitdistr(d.F.16$Shrub.kg.1, "Negative Binomial") #harvest not binomial
+#qqp(d.F$Shrub.kg.1, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+
+#poisson<-fitdistr(d.F$harvest.1, "Poisson") , poisson can only deal with whole integers
+#qqp(d.F$harvest.1, "pois", poisson$estimate)
+pdf(paste0(getwd(),"/Analysis/ES/Yayu_total_harvest.gamma.pdf"))
+gamma<-fitdistr(df.low$Shrub.kg.1,"gamma")
+qqp(df.low$Shrub.kg.1, "gamma",shape=gamma$estimate[[1]],rate=gamma$estimate[[2]])
+dev.off()
+
+#pdf(paste0(getwd(),"/Analysis/ES/HC1415_pertransdistharvest.pdf"),width=8,height=5)
+#interaction.plot(d.F2$distance.cat,d.F2$transect,d.F2$harvest)
+#dev.off()
+
+#run glmms, generalized linear mixed-effects models
+#develop "global model" for yield prediction, though analyze each year separately at present
+
+options(na.action = "na.omit")
+
+(fm001<-glmer(Shrub.kg.1~1+(1|Plot)  + (1|year),data=df.low,family=Gamma))
+(fm001b<-glmer(Shrub.kg.1~1+(1|Plot) ,data=df.low,family=Gamma))
+#(fm001c<-glmer(Shrub.kg.1~1 ,data=df.low,family=Gamma))
+anova(fm001,fm001b) #should use mixed models, for plot, Shrub.id and year
+
+#try for temporal autocorrelation, never reaches a result...
+#am01_lme<-lme(Shrub.kg.1~ elevation+patcharea + buffer,data=df.low,method="REML",
+#random = ~1 + year|Plot/Shrub.id,correlation=corCAR1(form=~year|Plot/Shrub.id),control=list(maxIter=10000, niterEM=10000),na.action="na.omit")
+
+#2015 & 2016
+#run it gamma and log
+am01 <- glmer(Shrub.kg.1~ ah.flower + fruitset  + labour + CN.ratio + propCBD + propCBB + BA.legume + GapDry +
+              patcharea  + (1|Plot) + (1|year),data=df.low.z,family=Gamma)
+#am01s<-standardize(am01)
+summary(am01)
+#r.squaredGLMM(am01)
+
+options(na.action = "na.fail")
+am01d<-dredge(am01)
+
+dredg.m01<-subset(am01d,delta<6)
+write.csv(dredg.m01,paste0(getwd(),"/Analysis/ES/GLM.gamma.yayu_dredged01.csv"))
+
+#do again with log
+am02 <-lmer(log(Shrub.kg.1)~ ah.flower + fruitset  + labour + CN.ratio + propCBD + propCLR + propCBB + BA.legume + GapDry +
+               patcharea  + (1|Plot/Shrub.id) + (1|year),data=df.low,REML=F)
+am02s<-standardize(am02)
+summary(am02s)
+r.squaredGLMM(am02s)
+
+am02d<-dredge(am02)
+dredg.m02<-subset(am02d,delta<2)
+write.csv(dredg.m02,paste0(getwd(),"/Analysis/ES/GLM.lnorm.yayu_dredged02.csv"))
 
 
+#Assumption 1: Within-group errors (or BLUPS) are independent and identically normally distributed, with mean zero and variance sigma squareda dn independent of random effects
+#graphic tests include within-group fitted values, observed values and any covariates of interest
+#boxplot of residuals by group, to check that residuals are centered around 0, but variability changes with group
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015_16.gamma_residuals.pdf"),width=8,height=5)
+bwplot(am01@frame$Plot~resid(am01))
+dev.off()
 
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015_16.lnorm_residuals.pdf"),width=8,height=5)
+bwplot(am02@frame$Plot~resid(am02))
+dev.off()
+
+#bwplot(fm02s@frame$PLOT~resid(fm02s))
+#plot standardized residuals versus fitted values by plot,
+#id identifies critical value (standarized residuals greater than 1-id/2 standard normal quantile in absolute value identified in plot)
+plot(am01,id=0.05,adj=-0.3)
+
+diagnos <- data.frame(Resid = resid(am01, type = "pearson"), Fitted = fitted(am01),Variable = df.low.z$Plot)
+
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.16.gamma_ResidualvFittedValues_all.pdf"),width=8,height=8)
+xyplot(Resid ~ Fitted, data = diagnos)
+dev.off()
+
+## separate by variable
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.16.gamma_ResidualvFittedValues.pdf"),width=8,height=8)
+xyplot(Resid ~ Fitted | Variable, data = diagnos)
+dev.off()
+
+diagnos <- data.frame(Resid = resid(am02, type = "pearson"), Fitted = fitted(am02),Variable = df.low$Plot)
+
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.16.lnorm_ResidualvFittedValues_all.pdf"),width=8,height=8)
+xyplot(Resid ~ Fitted, data = diagnos)
+dev.off()
+
+## separate by variable
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.16.lnorm_ResidualvFittedValues.pdf"),width=8,height=8)
+xyplot(Resid ~ Fitted | Variable, data = diagnos)
+dev.off()
+
+#issues with W1, BD4, and GC3
+#Assumption 2: Random effects are normally distributed with mean zero and covariance matrix (not depending on the group) and are independent for different groups
+#test for normality of residuals
+## overal QQ normal plot
+qqmath(~Resid, data = diagnos, distribution = qnorm)
+## separate by variable
+qqmath(~Resid | Variable, data = diagnos, distribution = qnorm)
+## we could add a line to indicate 'normal' with a bit more work
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.16.gamma._qqplotResiduals_byplot.pdf"),width=8,height=8)
+qqmath(~Resid | Variable, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
+       panel = function(x, ...) {
+         panel.qqmathline(x, ...)
+         panel.qqmath(x, ...)
+       })
+dev.off()
+
+pdf(paste0(getwd(),"/Analysis/ES/Shrub.2015.16.lnorm._qqplotResiduals_byplot.pdf"),width=8,height=8)
+qqmath(~Resid | Variable, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
+       panel = function(x, ...) {
+         panel.qqmathline(x, ...)
+         panel.qqmath(x, ...)
+       })
+dev.off()
+
+diagnos <- data.frame(Resid = resid(fm02s, type = "pearson"), Fitted = fitted(fm02s),Variable = d.F.15$Plot[!is.na(d.F.15$propCLR)])
 
 #Doraani Plots
 df.hi<-df.hi %>% filter(year!="2014") %>% filter(!is.na(Tot.fruits))
