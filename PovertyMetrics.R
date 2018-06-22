@@ -3,10 +3,10 @@ library(gridExtra)
 library(tidyverse)
 
 
-#setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
+setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
 #year="2014"
 #season="1415"
-setwd("/users/alex/Documents/Research/Africa/ECOLIMITS/Data/Yayu/")
+#setwd("/users/alex/Documents/Research/Africa/ECOLIMITS/Data/Yayu/")
 
 #source("/Volumes/ELDS/ECOLIMITS/R_codes/HelperFunctions/summarySE.R")
 
@@ -139,18 +139,30 @@ results[(nrow(results)-5):nrow(results),"quarts"]<-paste0(" ",results[1:6,"quart
 results[(nrow(results)-5):nrow(results),"category"]<-"TV"
 
 #Food Security
-x<-aov(glm(food.amount~factor(Coffee.income.quartile),family=poisson,data=dF.pov))
+x<-aov(glm(food.amount~factor(Coffee.income.quartile),family=binomial,data=dF.pov))
 results[(nrow(results)+1):(nrow(results)+6),1:4]<-data.frame(TukeyHSD(x, conf.level = 0.95)[[1]])
 results[(nrow(results)-5):nrow(results),"quarts"]<-paste0(" ",results[1:6,"quarts"])
 results[(nrow(results)-5):nrow(results),"category"]<-"Food Amount"
 
-x<-aov(glm(food.variety~factor(Coffee.income.quartile),family=poisson,data=dF.pov))
+x<-aov(glm(food.variety~factor(Coffee.income.quartile),family=binomial,data=dF.pov))
 results[(nrow(results)+1):(nrow(results)+6),1:4]<-data.frame(TukeyHSD(x, conf.level = 0.95)[[1]])
 results[(nrow(results)-5):nrow(results),"quarts"]<-paste0(" ",results[1:6,"quarts"])
 results[(nrow(results)-5):nrow(results),"category"]<-"Food Variety"
 
+#Access to Extension
+x<-aov(glm(extension~factor(Coffee.income.quartile),family=binomial,data=dF.pov))
+results[(nrow(results)+1):(nrow(results)+6),1:4]<-data.frame(TukeyHSD(x, conf.level = 0.95)[[1]])
+results[(nrow(results)-5):nrow(results),"quarts"]<-paste0(" ",results[1:6,"quarts"])
+results[(nrow(results)-5):nrow(results),"category"]<-"Extension"
+
+#Household Head Literacy
+x<-aov(glm(literacy~factor(Coffee.income.quartile),family=binomial,data=dF.pov))
+results[(nrow(results)+1):(nrow(results)+6),1:4]<-data.frame(TukeyHSD(x, conf.level = 0.95)[[1]])
+results[(nrow(results)-5):nrow(results),"quarts"]<-paste0(" ",results[1:6,"quarts"])
+results[(nrow(results)-5):nrow(results),"category"]<-"HHold Head Literacy"
+
 #save outcomes based on income quartile
-write.csv(results,paste0(getwd(),"/Analysis/ES/Poverty.IncomeQuartile.anovas.csv"))
+write.csv(results,paste0(getwd(),"/Analysis/ES/Poverty.IncomeQuartile.anovas_yayu.csv"))
 
 #do analysis using income continuous variable
 #sanitation

@@ -1,15 +1,15 @@
 #Figures of contributing factors to yield model
 
 library(car)
-library(MASS)
+#library(MASS)
 library(MuMIn)
 library(arm)
-library(nlme)
-library(MCMCglmm)
+#library(nlme)
+#library(MCMCglmm)
 require(lattice)
 library(tidyverse)
-library(broom)
-library(corrplot)
+#library(broom)
+#library(corrplot)
 library(lubridate)
 library(gridExtra)
 
@@ -1224,3 +1224,49 @@ g7<-ggplot(patch %>% filter(ah.fruit>10),aes(patcharea,ah.fruit)) + geom_point(a
 
 g8<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=4)
 ggsave(paste0(getwd(),"/Analysis/ES/CorrFigs.doraani.patcharea.plots.pdf"),g8,width=12,height=6)
+
+#compare EVI anomalies with yield gaps
+df<-read_csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
+evi<-read_csv(paste0(getwd(),"/Analysis/ES/evi_anomaly.csv"))
+
+evi2<-evi %>% gather(key="year",value="evi",-Date)
+colnames(evi2) <- c("Plot","year","evi")
+evi2$year<-gsub("evi_anom_","",evi2$year)
+df$year<-as.character(df$year)
+
+df <- left_join(df,evi2,by=c("Plot","year"))
+
+ggplot(df %>% filter(year=="2014"),aes(evi,low.yield)) + geom_point(aes(color=factor(year))) + stat_smooth(method="lm")
+
+comp<-left_join(evi2 %>% filter(year=="final"),df %>% filter(year=="2014") %>% select(Plot,elevation,patcharea,GapDry,CN.ratio,pH,Shannon.i,BA.legume),by=c("Plot"))
+
+g1<-ggplot(comp,aes(elevation,evi)) + geom_point() + stat_smooth(method="lm",formula=y~poly(x,2)) + theme_classic() +
+  xlab("Elevation (m)") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g2<-ggplot(comp,aes(patcharea,evi)) + geom_boxplot(aes(group=factor(patcharea))) + 
+  theme_classic() + stat_smooth(method="lm")+
+  xlab("PatchArea (ha)") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g3<-ggplot(comp,aes(GapDry,evi)) + geom_point() + 
+  theme_classic() + stat_smooth(method="lm")+
+  xlab("Canopy Gap [%]") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g4<-ggplot(comp,aes(CN.ratio,evi)) + geom_point() + 
+  theme_classic() + stat_smooth(method="lm")+
+  xlab("Soil C:N") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g5<-ggplot(comp,aes(pH,evi)) + geom_point() + 
+  theme_classic() + stat_smooth(method="lm")+
+  xlab("Soil pH") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g6<-ggplot(comp,aes(Shannon.i,evi)) + geom_boxplot(aes(group=Shannon.i)) + 
+  theme_classic() + stat_smooth(method="lm")+
+  xlab("Shannon Index of Shade Trees") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g7<-ggplot(comp,aes(BA.legume,evi)) + geom_boxplot(aes(group=BA.legume)) + 
+  theme_classic() + stat_smooth(method="lm")+
+  xlab("Basal Area of Leguminous Trees [m2/ha]") + ylab("Cumulative EVI Anomaly") + ggtitle("2000-2017")
+
+g8<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=3)
+ggsave(paste0(getwd(),"/Analysis/ES/CumEVI.vs.plotcharacteristics.pdf"),g8,width=8,height=6)
+
