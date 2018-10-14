@@ -18,8 +18,6 @@ source("/users/alex/Documents/Research/Africa/ECOLIMITS/Codes/overdispersion.R")
 setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu")
 
 d.F<-read.csv(paste0(getwd(),"/Analysis/ES/ES_analysis_dataset.csv"))
-
-
 #explore micro-climate variables
 metdata<-read.csv(paste0(getwd(),"/MetData/Monthly_metdata_withcanopygap.csv"))
 metdata$month<-as.Date(as.character(metdata$month))
@@ -34,15 +32,8 @@ metdata<- bind_rows(metdata %>% filter(Plot!="FC1"&Plot!="B15"),clean)
 
 #plot out micro-climate (absolute humidity) data to see coverage, FC2 is good, or W3 or B15 or WA3 or Y2
 mdata<-metdata %>% gather(key="measure",value="value",-Plot,-name,-month,-elevation,-psize)
-ggplot(mdata[grep("ECO_",mdata$name),],aes(month,value,group=Plot))+geom_line(aes(color=Plot))+facet_wrap(~measure,ncol=2)+theme(
-  plot.background = element_blank()
-  ,panel.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank()
-  ,panel.border = element_blank()
-  ,axis.line.x = element_line(color = 'black')
-  ,axis.line.y = element_line(color = 'black')
-  ,text = element_text(size = 14)
+ggplot(mdata[grep("ECO_",mdata$name),],aes(month,value,group=Plot))+geom_line(aes(color=Plot))+facet_wrap(~measure,ncol=2)+
+  theme_classic()+theme(text = element_text(size = 14)
   ,axis.text.x=element_text(angle = 45,hjust=1))
 ggsave(paste0(getwd(),"/Analysis/ES/Microclimate.continuityofmeasures.pdf"),height=8,width=10)
 
@@ -51,15 +42,8 @@ metdata<- metdata %>% filter(Plot!="FC1"&Plot!="FC2")
 mdata<-metdata %>% gather(key="measure",value="value",-Plot,-name,-month,-elevation,-psize)
 
 #plot out max temp vs elevation
-ggplot(mdata[mdata$measure=="tmax"&mdata$month>"2014-11-01"&mdata$month<"2015-12-01",],aes(elevation,value))+geom_point()+facet_wrap(~month,ncol=3)+stat_smooth(method="lm")+theme(
-  plot.background = element_blank()
-  ,panel.background = element_blank()
-  ,panel.grid.major = element_blank()
-  ,panel.grid.minor = element_blank()
-  ,panel.border = element_blank()
-  ,axis.line.x = element_line(color = 'black')
-  ,axis.line.y = element_line(color = 'black')
-  ,text = element_text(size = 14)
+ggplot(mdata[mdata$measure=="tmax"&mdata$month>"2014-11-01"&mdata$month<"2015-12-01",],aes(elevation,value))+geom_point()+facet_wrap(~month,ncol=3)+stat_smooth(method="lm")+
+  theme_classic() +theme(text = element_text(size = 14)
   ,axis.text.x=element_text(angle = 45,hjust=1))
 ggsave(paste0(getwd(),"/Analysis/ES/Max.Temp.vs.Elevation.pdf"),height=10,width=8)
 

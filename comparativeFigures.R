@@ -8,17 +8,17 @@ setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
 #Load plot yields
 df<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset.csv"))
 #load modified microclimate values
-numb<-read.csv(paste0(getwd(),"/Analysis/ES/ES.shrub.mod_analysis_dataset.csv"))
-numb <- numb %>% filter(year!=2014) %>% select(Plot,year,ah.fruit,ah.flower) %>% group_by(Plot,year) %>%
-  summarise(ah.fruit.mod=mean(ah.fruit,na.rm=T),ah.flower.mod=mean(ah.flower,na.rm=T)) %>% ungroup()
+#numb<-read.csv(paste0(getwd(),"/Analysis/ES/ES.shrub.mod_analysis_dataset.csv"))
+#numb <- numb %>% filter(year!=2014) %>% select(Plot,year,ah.fruit,ah.flower) %>% group_by(Plot,year) %>%
+#  summarise(ah.fruit.mod=mean(ah.fruit,na.rm=T),ah.flower.mod=mean(ah.flower,na.rm=T)) %>% ungroup()
 
-df<-left_join(df,numb,by=c("Plot","year"))
+#df<-left_join(df,numb,by=c("Plot","year"))
 
-df<- df %>% mutate(ah.flower=replace(ah.flower,is.na(ah.flower),ah.flower.mod[is.na(ah.flower)]),ah.fruit=replace(ah.fruit,is.na(ah.fruit),ah.fruit.mod[is.na(ah.fruit)]))
+#df<- df %>% mutate(ah.flower=replace(ah.flower,is.na(ah.flower),ah.flower.mod[is.na(ah.flower)]),ah.fruit=replace(ah.fruit,is.na(ah.fruit),ah.fruit.mod[is.na(ah.fruit)]))
 
-df.comp14<- df %>% filter(year=="2014") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,ah.fruit,ah.flower,tmax.flower,tmax.fruit)
-df.comp15<- df %>% filter(year=="2015") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,ah.fruit,ah.flower,tmax.flower,tmax.fruit)
-df.comp16<- df %>% filter(year=="2016") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,ah.fruit,ah.flower,tmax.flower,tmax.fruit)
+df.comp14<- df %>% filter(year=="2014") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,vpd.fruit,vpd.flower,tmax.flower,tmax.fruit,p_et.flower,p_et.fruit)
+df.comp15<- df %>% filter(year=="2015") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,vpd.fruit,vpd.flower,tmax.flower,tmax.fruit,p_et.flower,p_et.fruit)
+df.comp16<- df %>% filter(year=="2016") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,vpd.fruit,vpd.flower,tmax.flower,tmax.fruit,p_et.flower,p_et.fruit)
 
 dF <- df.comp14 %>% gather(key="variable",value="i2014",c(-Plot,-kebele))
 
