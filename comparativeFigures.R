@@ -322,3 +322,49 @@ ggplot(dF[dF$variable=="Shrub.kg",],aes(i2014,i2015))+geom_point(aes(color="2015
     ,legend.background = element_blank())
 ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigure.yield.2014v2015.2016.pdf"))
 
+
+#plot barplots of disease measures
+g1<-ggplot(output,aes(wereda,propCBD,fill=factor(year))) + geom_bar(stat="identity",position="dodge")+
+  xlab("Wereda") + ylab("Mean CBD [%]")+scale_fill_discrete(name="Year")+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,text = element_text(size = 18)
+    ,legend.key = element_blank()
+    ,legend.position="none")
+
+g2<-ggplot(output,aes(wereda,propCBB,fill=factor(year))) + geom_bar(stat="identity",position="dodge")+
+  xlab("Wereda") + ylab("Mean CBB [%]")+scale_fill_discrete(name="Year")+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,text = element_text(size = 18)
+    ,legend.key = element_blank()
+    ,legend.position="none")
+g3<-ggplot(output,aes(wereda,propCLR,fill=factor(year))) + geom_bar(stat="identity",position="dodge")+
+  xlab("Wereda") + ylab("Mean CLR [%]")+scale_fill_discrete(name="Year")+
+  theme(
+    plot.background = element_blank()
+    ,panel.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,text = element_text(size = 18)
+    ,legend.key = element_blank()
+    ,legend.position="bottom")
+
+g4<-grid.arrange(g1,g2,g3,ncol=1)
+ggsave(paste0(getwd(),"/Analysis/ES/Variability.disease.measures.by.wereda.pdf"),g4,width=7,height=10)
+

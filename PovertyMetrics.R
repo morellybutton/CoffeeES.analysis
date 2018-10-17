@@ -12,12 +12,7 @@ setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
 
 dF.pov<-data.frame(read.csv(paste0(getwd(),"/HouseholdSurvey/household_data.csv")),stringsAsFactors = F)
 dF.income<-data.frame(read.csv(paste0(getwd(),"/Analysis/ES/Estimated.variability.income.csv")),stringsAsFactors = F)
-dF<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot.mod_analysis_dataset.csv"))
-
-dF$wereda<-"Yayu"
-dF[dF$kebele=="Badessa"|dF$kebele=="Weyra","wereda"]<-"Doraani"
-#add wereda
-dF.income$wereda<-dF[match(dF.income$plotcode,dF$Plot),"wereda"]
+dF<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
 
 #currency conversion rate birr to usd
 usd=27.21
@@ -37,19 +32,19 @@ quarts <- dF.pov %>% group_by(Total.income.quartile) %>% summarise(min.usd=min(T
 quarts.c <- dF.pov %>% group_by(Coffee.income.quartile) %>% summarise(min.usd=min(Coffee.income.usd,na.rm=T))
 
 #open additional income estimates
-yayu.2015<-read.csv(paste0(getwd(),"/Analysis/ES/Yield.increase.Yayu.2015.csv"))
-doraani.2016 <- read.csv(paste0(getwd(),"/Analysis/ES/Yield.increase.Doraani.2016.csv"))
+#yayu.2015<-read.csv(paste0(getwd(),"/Analysis/ES/Yield.increase.Yayu.2015.csv"))
+#doraani.2016 <- read.csv(paste0(getwd(),"/Analysis/ES/Yield.increase.Doraani.2016.csv"))
 
-total.yayu<-yayu.2015 %>% group_by(Plot) %>% summarise(add.income.15=sum(new.income,na.rm=T)) %>% mutate(plotcode=Plot)
-total.doraani <- doraani.2016 %>% group_by(Plot) %>% filter(variable=="CN.ratio1"|variable=="fruitset1") %>% 
-  summarise(add.income.16=sum(new.income,na.rm=T)) %>% mutate(plotcode=Plot)
+#total.yayu<-yayu.2015 %>% group_by(Plot) %>% summarise(add.income.15=sum(new.income,na.rm=T)) %>% mutate(plotcode=Plot)
+#total.doraani <- doraani.2016 %>% group_by(Plot) %>% filter(variable=="CN.ratio1"|variable=="fruitset1") %>% 
+#  summarise(add.income.16=sum(new.income,na.rm=T)) %>% mutate(plotcode=Plot)
 
 #add to income array
-dF.income<-left_join(dF.income,total.yayu %>% select(plotcode,add.income.15),by="plotcode")
-dF.income<-left_join(dF.income,total.doraani %>% select(plotcode,add.income.16),by="plotcode")
+#dF.income<-left_join(dF.income,total.yayu %>% select(plotcode,add.income.15),by="plotcode")
+#dF.income<-left_join(dF.income,total.doraani %>% select(plotcode,add.income.16),by="plotcode")
 
-dF.income<-dF.income %>% group_by(plotcode) %>% mutate(a.2015=sum(add.income.15,y2015),a.2016=sum(add.income.16,y2016)) %>% mutate(a.14.15=(a.2015-y2014)/y2014,a.14.16=(a.2016-y2014)/y2014) %>%
-  mutate(o.a.2015=Coffee.income/usd*(1+a.14.15),o.a.2016=Coffee.income/usd*(1+a.14.16))
+#dF.income<-dF.income %>% group_by(plotcode) %>% mutate(a.2015=sum(add.income.15,y2015),a.2016=sum(add.income.16,y2016)) %>% mutate(a.14.15=(a.2015-y2014)/y2014,a.14.16=(a.2016-y2014)/y2014) %>%
+#  mutate(o.a.2015=Coffee.income/usd*(1+a.14.15),o.a.2016=Coffee.income/usd*(1+a.14.16))
 
 #dF.pov$z.Food.security<-(dF.pov$Food.security-mean(dF.pov$Food.security))/sd(dF.pov$Food.security)
 #quart<-ddply(dF.pov,.(Cocoa.income.quart),summarise,income=max(Cocoa.Income,na.rm=T))
@@ -69,6 +64,9 @@ ggplot(dF.pov,aes(Coffee.income/usd,Total.income/usd))+geom_point()+stat_smooth(
     ,text = element_text(size = 14))
 ggsave(paste0(getwd(),"/Analysis/ES/Survey.totalincome.v.coffeeincome.pdf"))
 
+#relationship between coffee land area and percent income from coffee
+ggplot(dF.pov,aes(log(coffee.landarea.ha),Coffee.income.percent)) + geom_point() + theme_classic()+
+  xlab("Log of Coffee Land Area [ha]") + ylab("Percent of Income from Coffee") + stat_smooth(method="lm")
 
 ggplot(dF.pov,aes(id,Total.income.usd))+geom_bar(stat="identity") + geom_bar(data=dF.pov %>% filter(plotcode!=""), aes(id,Total.income.usd),color="red",stat="identity") + geom_vline(xintercept=60,linetype="dashed") + 
   geom_vline(xintercept=121,linetype="dashed") + geom_vline(xintercept=182,linetype="dashed") + xlab("Households\n(red = monitored plots)") + 
