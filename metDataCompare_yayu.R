@@ -1,4 +1,5 @@
 #create figures comparing metdata measures and soil moisture measures before, during and after el nino
+#explore influence of patch area and elevation on micro-climate for each month.
 
 library(tidyverse)
 library(lubridate)
