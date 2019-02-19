@@ -176,10 +176,6 @@ tm.2<-glm(all.years~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomia
 
 anova(tm,tm.1,tm.2)
 
-sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.AllYears.landscape.txt")
-summary(tm.2)
-sink()
-
 
 tm2<-glm(low.yield.bin~elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
 tm2.1<-glm(low.yield.bin~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
@@ -224,6 +220,14 @@ sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resi
 summary(tm15)
 sink()
 
+n1<-plot(allEffects(tm15)[[3]],ylab="Probability Low Yielding\n(2015)",xlab="",main="", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+n2<-plot(allEffects(tm15)[[2]],ylab="",xlab="",main="", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+n3<-plot(allEffects(tm15)[[1]],ylab="",xlab="Patch Area [ha]",main="", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+class(n1) <- class(n2) <- class(n3) <- "trellis"
+
+n15<-gridExtra::grid.arrange(n1, n2, n3, ncol=3,nrow=1)
+
+
 tm16.null<-glm(low.yield16.bin~1,data=dF.summ,family=quasibinomial(link="logit"))
 tm16<-glm(low.yield16.bin~patcharea+elevation+GapDry,data=dF.summ,family=quasibinomial(link="logit"))
 tm16.1<-glm(low.yield16.bin~patcharea*elevation+GapDry,data=dF.summ,family=quasibinomial(link="logit"))
@@ -246,6 +250,13 @@ summary(tm16.6)
 
 summary(tm16.11)
 1-tm16.11$deviance/tm16.11$null.deviance
+
+n4<-plot(allEffects(tm16.11)[[2]],ylab="Probability Low Yielding\n(2016)",xlab="Canopy Gap [%]",main="", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+n5<-plot(allEffects(tm16.11)[[1]],ylab="",xlab="Elevation [m]",main="" ,cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+#n3<-plot(allEffects(tm16.11)[[1]],ylab="",xlab="",main="")
+class(n4) <- class(n5)  <- "trellis"
+
+n16<-gridExtra::grid.arrange(n4, n5, ncol=3,nrow=1)
 
 sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.2016.landscape.txt")
 summary(tm16.11)
@@ -274,8 +285,19 @@ summary(tm14)
 plot(allEffects(tm14))
 
 sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.2014.landscape.txt")
-summary(tm14.2)
+summary(tm14)
 sink()
+
+n6<-plot(allEffects(tm14)[[3]],ylab="Probability Low Yielding\n(2014)",xlab="",main="Canopy Gap Effect", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+n7<-plot(allEffects(tm14)[[2]],ylab="",xlab="",main="Elevation Effect", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+n8<-plot(allEffects(tm14)[[1]],ylab="",xlab="",main="Patch Area Effect", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+class(n6) <- class(n7) <- class(n8) <- "trellis"
+
+n14<-gridExtra::grid.arrange(n6, n7, n8, ncol=3,nrow=1)
+
+pdf("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Landscape.management.lowyielding.pdf",height=15,width=15)
+gridExtra::grid.arrange(n14, n15, n16, ncol=1,nrow=3)
+dev.off()
 
 #do for two years
 tm1415<-glm(low.yield1415.bin~patcharea+elevation,data=dF.summ,family=quasibinomial(link="logit"))
@@ -553,6 +575,10 @@ plot(allEffects(sm.3))
 plot(allEffects(sm.4))
 plot(allEffects(sm.7))
 
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.AllYears.landscape.txt")
+summary(sm.4)
+sink()
+
 elev<-seq(as.integer(min(dF.summ$elevation)),as.integer(max(dF.summ$elevation)),by=5)
 shade<-seq(as.integer(min(dF.summ$GapDry)),as.integer(max(dF.summ$GapDry)),by=0.25)
 
@@ -601,6 +627,10 @@ plot(allEffects(vm.7))
 #R2 of sm.1
 1-vm.4$deviance/vm.4$null.deviance
 
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerable.landscape.txt")
+summary(vm.4)
+sink()
+
 z.sv<-data.frame()
 for(i in 1:length(elev)){
   for(j in 1:length(shade)){
@@ -641,6 +671,10 @@ anova(im.null,im,im.1,im.2,im.3,im.4,im.5,test="Chisq")
 anova(im,im.1,im.2,im.3,im.4,im.5,test="Chisq")
 #R2 of sm.1
 1-im.1$deviance/im.1$null.deviance
+
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerable.landscape.txt")
+summary(im.1)
+sink()
 
 p1<-plot(allEffects(im.1)[[1]],ylab="Income Log Ratio",xlab="Canopy Gap [%]",main="Canopy Gap Effect")
 p2<-plot(allEffects(im.1)[[2]],ylab="Income Log Ratio",xlab="Elevation [m]",main="Elevation Effect")
