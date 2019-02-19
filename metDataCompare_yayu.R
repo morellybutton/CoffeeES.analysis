@@ -332,15 +332,17 @@ ggarrange(g1,g2,ncol=1,nrow=2,heights=c(1,3))
 ggsave(paste0(getwd(),"/Analysis/ElNino/TerraClim.MaxTComparison.pdf"))
 
 #combining satellite and ground measurements for comparison
+sat_anom<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
+
 met_comp<-met_comp %>% rename(Date=month,g.max_temp=max_temp,g.min_temp=min_temp,g.vpd=vpd)
-met_comp<-left_join(met_comp,sat_anom %>% select(Date,vpd,min_temp,max_temp),by="Date")
+met_comp<-left_join(met_comp,sat_anom %>% select(Date,vpd,tmax),by="Date")
 met_ppt<-met_ppt %>% rename(Date=month)
-met_ppt<-left_join(met_ppt,sat_anom %>% select(Date,precip),by="Date")
+met_ppt<-left_join(met_ppt,sat_anom %>% select(Date,ppt),by="Date")
 
 #plot the measurements
-lm_eqn<-lm(max_temp~g.max_temp,data=met_comp)
-g1<-met_comp %>% ggplot() + geom_point(aes(g.max_temp,max_temp)) + theme_classic() + ylab("TerraClim Max T [C]") +
-  xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,max_temp),method="lm") + 
+lm_eqn<-lm(tmax~g.max_temp,data=met_comp)
+g1<-met_comp %>% ggplot() + geom_point(aes(g.max_temp,tmax)) + theme_classic() + ylab("TerraClim Max T [C]") +
+  xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,tmax),method="lm") + 
   annotate("text",x=23,y=30,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T)
        
   

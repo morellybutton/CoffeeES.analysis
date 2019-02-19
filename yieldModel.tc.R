@@ -32,30 +32,37 @@ quart16 <- quantile(d.F %>% filter(year==2016) %>% pull(Shrub.kg))
 
 low.yield14 <- d.F %>% filter(year==2014&Shrub.kg<quart14[3]) %>% select(Plot,Shrub.id)
 low.yield14 <- low.yield14 %>% mutate(low.yield14=1)
+low.yield14$year<-2014
 low.yield15 <- d.F %>% filter(year==2015&Shrub.kg<quart15[3]) %>% select(Plot,Shrub.id)
 low.yield15 <- low.yield15 %>% mutate(low.yield15=1)
+low.yield15$year<-2015
 low.yield16 <- d.F %>% filter(year==2016&Shrub.kg<quart16[3]) %>% select(Plot,Shrub.id)
 low.yield16 <- low.yield16 %>% mutate(low.yield16=1)
+low.yield16$year<-2016
 
-d.F <- left_join(d.F,low.yield14,by=c("Plot","Shrub.id"))
-d.F <- d.F %>% mutate(low.yield14=replace(low.yield14,is.na(low.yield14),0))
-d.F <- left_join(d.F,low.yield15,by=c("Plot","Shrub.id"))
-d.F <- d.F %>% mutate(low.yield15=replace(low.yield15,is.na(low.yield15),0))
-d.F <- left_join(d.F,low.yield16,by=c("Plot","Shrub.id"))
-d.F <- d.F %>% mutate(low.yield16=replace(low.yield16,is.na(low.yield16),0))
-d.F <- d.F %>% group_by(Plot,Shrub.id,year) %>% mutate(low.yield=sum(low.yield14,low.yield15,low.yield16,na.rm=T)/3)
-  
+d.F <- left_join(d.F,low.yield14,by=c("Plot","Shrub.id","year"))
+d.F <- d.F %>% mutate(low.yield14=replace(low.yield14,is.na(low.yield14)&year==2014,0))
+d.F <- left_join(d.F,low.yield15,by=c("Plot","Shrub.id","year"))
+d.F <- d.F %>% mutate(low.yield15=replace(low.yield15,is.na(low.yield15)&year==2015,0))
+d.F <- left_join(d.F,low.yield16,by=c("Plot","Shrub.id","year"))
+d.F <- d.F %>% mutate(low.yield16=replace(low.yield16,is.na(low.yield16)&year==2016,0))
+#d.F <- d.F %>% group_by(Plot,Shrub.id,year) %>% mutate(low.yield=sum(low.yield14,low.yield15,low.yield16,na.rm=T))
+
+#take sum of low yielding shrubs and only assign low.yield.bin 1 if sum is >=4
 d.F.plot <- d.F %>% group_by(Plot,year) %>% summarise(Shrub.kg=median(Shrub.kg,na.rm=T),Tot.fruits=median(Tot.fruits,na.rm=T),fruitset=median(fruitset,na.rm=T),
                                                       propCBB=median(propCBB,na.rm=T),propCBD=median(propCBD,na.rm=T),fruit.drop=median(fruit.drop,na.rm=T),prop.fdrop=median(prop.fdrop,na.rm=T),
                                                       Tot.leaves=median(Tot.leaves,na.rm=T),leaf.drop=median(leaf.drop,na.rm=T),prop.ldrop=median(prop.ldrop,na.rm=T),
                                                       propLM=median(propLM, na.rm=T), propCLR=median(propCLR,na.rm=T), propWilt=median(propWilt,na.rm=T),
-                                                      propHerb=median(propHerb,na.rm=T),low.yield=mean(low.yield,na.rm=T),low.yield14=mean(low.yield14,na.rm=T),low.yield15=mean(low.yield15,na.rm=T),
-                                                      low.yield16=mean(low.yield16,na.rm=T),prop.legume=mean(BA.legume/BA.all,na.rm=T)) %>% mutate(prop.legume=replace(prop.legume,is.na(prop.legume),0)) %>%
-  mutate(low.yield14.bin=1,low.yield15.bin=1,low.yield16.bin=1,low.yield.bin=1) %>% mutate(low.yield14.bin=replace(low.yield14.bin,low.yield14<0.5,0),
-                                                                                           low.yield15.bin=replace(low.yield15.bin,low.yield15<0.5,0),
-                                                                                           low.yield16.bin=replace(low.yield16.bin,low.yield16<0.5,0),
-                                                                                           low.yield.bin=replace(low.yield.bin,low.yield<0.5,0)) %>% ungroup()
+                                                      propHerb=median(propHerb,na.rm=T),low.yield=mean(low.yield,na.rm=T),low.yield14=sum(low.yield14,na.rm=T),low.yield15=sum(low.yield15,na.rm=T),
+                                                      low.yield16=sum(low.yield16,na.rm=T),prop.legume=mean(BA.legume/BA.all,na.rm=T)) %>% mutate(prop.legume=replace(prop.legume,is.na(prop.legume),0)) %>%
+  mutate(low.yield14.bin=0,low.yield15.bin=0,low.yield16.bin=0) %>% mutate(low.yield14.bin=replace(low.yield14.bin,low.yield14>=4,1),
+                                                                                           low.yield15.bin=replace(low.yield15.bin,low.yield15>=4,1),
+                                                                                           low.yield16.bin=replace(low.yield16.bin,low.yield16>=4,1)) %>% ungroup()
 
+low.yield.plot<- d.F.plot %>% group_by(Plot) %>% summarise(low.yield1=sum(low.yield14.bin,low.yield15.bin,low.yield16.bin,na.rm=T),low.yield1415=sum(low.yield14.bin,low.yield15.bin,na.rm=T),low.yield1516=sum(low.yield15.bin,low.yield16.bin,na.rm=T),low.yield1416=sum(low.yield16.bin,low.yield14.bin,na.rm=T),low.yield.bin=0,low.yield1415.bin=0,low.yield1516.bin=0,low.yield1416.bin=0) %>% 
+  mutate(low.yield.bin=replace(low.yield.bin,low.yield1==2,1),low.yield1415.bin=replace(low.yield1415.bin,low.yield1415==2,1),low.yield1516.bin=replace(low.yield1516.bin,low.yield1516==2,1),low.yield1416.bin=replace(low.yield1416.bin,low.yield1416==2,1)) %>% ungroup()
+
+d.F.plot<-left_join(d.F.plot,low.yield.plot %>% select(Plot,low.yield.bin,low.yield1415.bin,low.yield1516.bin,low.yield1416.bin),by="Plot")
 d.F.plot$ID<-1:nrow(d.F.plot)
 d.F.plot <- left_join(d.F.plot,d.F %>% select(-ID,-Shrub.kg,-Tot.fruits,-fruitset,-propCBB,-propCBD,-fruit.drop,-Tot.leaves,-leaf.drop,-prop.ldrop,-prop.fdrop,-propLM,-propCLR,-propWilt,-propHerb,-Shrub.kg.1,-low.yield,-low.yield14,-low.yield15,-low.yield16),by=c("Plot","year"))
 d.F.plot <- distinct(d.F.plot,ID,.keep_all=T)

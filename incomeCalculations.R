@@ -6,7 +6,13 @@ setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
 #setwd("/users/alex/Documents/Research/Africa/ECOLIMITS/Data/Yayu/")
 #load input data for model
 dF.1<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
+dF.hhold1<-data.frame(read.csv(paste0(getwd(),"/HouseholdSurvey/household_data_ext.csv")),stringsAsFactors = F)
 dF.hhold<-data.frame(read.csv(paste0(getwd(),"/HouseholdSurvey/household_data.csv")),stringsAsFactors = F)
+
+dF.hhold<-left_join(dF.hhold,dF.hhold1 %>% select(SUBMISSION,Number.of.income.sources),by="SUBMISSION")
+dF.hhold<-dF.hhold %>% rename(income.sources=Number.of.income.sources)
+
+rm(dF.hhold1)
 
 #currency conversion rate birr to usd
 usd=27.21
@@ -64,7 +70,7 @@ ggplot(dF.1 %>% filter(year==2014),aes(Coffee.income/usd,est.coffee.income.usd))
 ggsave(paste0(getwd(),"/Analysis/ES/Survey.estincome.v.reportedincome.final.pdf"))
 
 #calculate total and proportional change in income from 2014
-dF.summ <- dF.1 %>% group_by(Plot,Coffee.income.percent,coffee.area.ha,Coffee.income.quartile,Coffee.income,elevation,patcharea,Shannon.i,BA.legume,Total.labour,local) %>% summarise(avg.harvest.kg=mean(est.yield),sd.harvest.kg=sd(est.yield) )  %>% #,
+dF.summ <- dF.1 %>% group_by(Plot,Coffee.income.percent,coffee.area.ha,Coffee.income.quartile,Coffee.income,income.sources,household.size,elevation,patcharea,Shannon.i,BA.legume,Total.labour,local,GapDry,GapWet,b.ffer) %>% summarise(avg.harvest.kg=mean(est.yield),sd.harvest.kg=sd(est.yield) )  %>% #,
                                                  #avg.coffee.income=mean(est.coffee.income.usd,na.rm=T),sd.coffee.income=sd(est.coffee.income.usd,na.rm=T)) 
                                                 
   ungroup()
@@ -89,7 +95,7 @@ dF.summ <- dF.summ %>% group_by(Plot,Coffee.income) %>% mutate(harvest.kg.2014=y
                                                                   income.diff.2015=income.2015-income.2014,log.inc.diff.15=log(income.2015/income.2014),
                                                                   income.diff.2016=income.2016-income.2014,log.inc.diff.16=log(income.2016/income.2014)) %>% 
   mutate(income.tot.2016=income.diff.2015+income.diff.2016,prop.harvest.2015=harvest.diff.2015/harvest.kg.2014,prop.harvest.2016=harvest.diff.2016/harvest.kg.2014,
-         prop.income.2015=income.diff.2015/income.2014, prop.income.2016=income.diff.2016/income.2014) %>% 
+         prop.income.2015=income.2015/income.2014, prop.income.2016=income.2016/income.2014) %>% 
   mutate(prop.tot=income.tot.2016/income.2014,log.tot=log(sum(income.2015,income.2016,na.rm=T)/income.2014)) %>% 
   mutate(log.inc.diff.15=replace(log.inc.diff.15,log.inc.diff.15==-Inf,NA),log.inc.diff.16=replace(log.inc.diff.16,log.inc.diff.16==-Inf,NA)) %>% 
   ungroup()
@@ -116,7 +122,6 @@ car::qqp(dF.summ$log.inc.diff.16)
 im<-lm(log.inc.diff.15~arm::rescale(patcharea)+arm::rescale(elevation)+arm::rescale(Shannon.i)+arm::rescale(BA.legume),data=dF.summ)
 summary(im)
 
-
 dF.summ<-left_join(dF.summ,dF.1 %>% select(Plot,low.yield.bin,low.yield14.bin,low.yield15.bin,low.yield16.bin),by="Plot")
 dF.summ <- dF.summ %>% distinct(Plot,Coffee.income,.keep_all=T)
 
@@ -142,7 +147,7 @@ ggsave(paste0(getwd(),"/Analysis/ES/PropCumDiffIncome.PercentIncomeCoffee.pdf"),
 ggsave(paste0(getwd(),"/Analysis/ES/PropCumLogDiffIncome.PercentIncomeCoffee.pdf"),g1,height=4,width=5)
 
 #identify vulnerable households, -log ratio of income, greater than 50% dependence on coffee, below 4th income quartile
-dF.summ <- dF.summ %>% group_by(Plot) %>% mutate(vulnerable=0) %>% mutate(vulnerable=replace(vulnerable,log.tot<0&Coffee.income.quartile<4&!is.na(Coffee.income.quartile)&Coffee.income.percent>50,1))
+dF.summ <- dF.summ %>% group_by(Plot,coffee.area.ha) %>% mutate(vulnerable=0) %>% mutate(vulnerable=replace(vulnerable,log.tot<0&Coffee.income.quartile<4&!is.na(Coffee.income.quartile)&Coffee.income.percent>50,1))
 
 g1<-ggplot(dF.summ %>% filter(low.yield.bin==1), aes(log.tot,Coffee.income.percent)) + geom_point(aes(color=factor(vulnerable))) +
   #xlim(-1,1.5) + 
@@ -185,7 +190,34 @@ dF.summ <- dF.summ %>% group_by(Plot,coffee.area.ha,Coffee.income.quartile,Coffe
 
 write.csv(dF.summ,paste0(getwd(),"/Analysis/ES/Yield.income.input.variables.csv"))
 
-#####need to move ot PovertyMetrics
+#assess whether investments in labour or whether a household is "local", in the buffer or not predicts vulnerability or placement in the landscape.
+dF.summ<-read.csv(paste0(getwd(),"/Analysis/ES/Yield.income.input.variables.csv"))
+
+pv1<-glm(vulnerable~poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(pv1)
+
+pv2<-glm(vulnerable~buffer,data=dF.summ,family=quasibinomial(link="logit"))
+summary(pv2)
+
+pv3<-glm(buffer~poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(pv3)
+
+lv1<-glm(vulnerable~local,data=dF.summ,family=quasibinomial(link="logit"))
+summary(lv1)
+
+#correlation between total labour and location in the buffer
+cor(dF.summ$Total.labour[!is.na(dF.summ$Total.labour&dF.summ$Total.labour<max(dF.summ$Total.labour[!is.na(dF.summ$Total.labour)]))],dF.summ$buffer[!is.na(dF.summ$Total.labour)],method="pearson")
+lv2<-lm(Total.labour~poly(elevation,2) + buffer,data=dF.summ)
+summary(lv2)
+
+ggplot(dF.summ %>% filter(Total.labour<1200),aes(elevation,Total.labour)) + geom_point() + stat_smooth(method="lm")
+                                                                                                       #,formula=y~poly(x,2))
+
+pv4<-lm(Total.labour~poly(elevation,2)+patcharea,data=dF.summ)
+summary(pv4)
+
+
+#####need to move to PovertyMetrics
 library(ggpubr)
 
 dF.summ<-read.csv(paste0(getwd(),"/Analysis/ES/Yield.income.input.variables.csv"))
