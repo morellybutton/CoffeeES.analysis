@@ -169,24 +169,6 @@ patch<-seq(as.integer(min(dF.summ$patcharea)),as.integer(max(dF.summ$patcharea))
 z.elev<-attributes(scale(dF.summ$elevation))
 z.patch<-attributes(scale(dF.summ$patcharea))
 
-#library(arm)
-tm<-glm(all.years~patcharea+elevation,data=dF.summ,family=quasibinomial(link="logit"))
-tm.1<-glm(all.years~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
-tm.2<-glm(all.years~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-
-anova(tm,tm.1,tm.2)
-
-
-tm2<-glm(low.yield.bin~elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-tm2.1<-glm(low.yield.bin~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
-tm2.2<-glm(low.yield.bin~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-
-anova(tm2,tm2.1,tm2.2)
-
-sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.TwoYears.landscape.txt")
-summary(tm2)
-sink()
-
 tm15.null<-glm(low.yield15.bin~1,data=dF.summ,family=quasibinomial(link="logit"))
 tm15<-glm(low.yield15.bin~patcharea+elevation+GapDry,data=dF.summ,family=quasibinomial(link="logit"))
 tm15.1<-glm(low.yield15.bin~patcharea*elevation+GapDry,data=dF.summ,family=quasibinomial(link="logit"))
@@ -298,6 +280,261 @@ n14<-gridExtra::grid.arrange(n6, n7, n8, ncol=3,nrow=1)
 pdf("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Landscape.management.lowyielding.pdf",height=15,width=15)
 gridExtra::grid.arrange(n14, n15, n16, ncol=1,nrow=3)
 dev.off()
+
+
+#canopy gap predicts low yielding farms
+sm<-glm(all.years~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(sm)
+sm.1<-glm(all.years~poly(GapDry,2)+poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(sm.1)
+sm.2<-glm(all.years~poly(GapDry,2)+elevation*patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(sm.2)
+sm.3<-glm(all.years~GapDry*patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+summary(sm.3)
+sm.4<-glm(all.years~poly(GapDry,2)+elevation,data=dF.summ,family=quasibinomial(link="logit"))
+summary(sm.4)
+sm.5<-glm(all.years~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+sm.6<-glm(all.years~poly(GapDry,2)+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+sm.7<-glm(all.years~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(sm.7)
+
+s.null<-glm(all.years~1,data=dF.summ,family=quasibinomial(link="logit"))
+
+anova(s.null,sm,sm.1,sm.2,sm.3,sm.4,sm.5,sm.6,test="Chisq")
+anova(s.null,sm,sm.1,sm.4,sm.5,test="Chisq")
+#R2 of sm.1
+1-sm.4$deviance/sm.4$null.deviance
+
+library(effects)
+
+plot(allEffects(sm))
+plot(allEffects(sm.1))
+plot(allEffects(sm.2))
+plot(allEffects(sm.3))
+plot(allEffects(sm.4))
+plot(allEffects(sm.7))
+
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.AllYears.landscape.txt")
+summary(sm.4)
+sink()
+
+elev<-seq(as.integer(min(dF.summ$elevation)),as.integer(max(dF.summ$elevation)),by=5)
+shade<-seq(as.integer(min(dF.summ$GapDry)),as.integer(max(dF.summ$GapDry)),by=0.25)
+
+z.s<-data.frame()
+for(i in 1:length(elev)){
+  for(j in 1:length(shade)){
+    pi.hat = predict.glm(sm.4, data.frame(GapDry=shade[j],elevation=elev[i]),
+                         type="response", se.fit=TRUE)
+    z.s[i,j]<-pi.hat$fit  }
+}
+colnames(z.s)<-shade
+z.s$elevation<-elev
+
+z_s.v<-gather(z.s,key="shade",value="low.yld",-elevation)
+
+t1<-ggplot(z_s.v, aes( as.numeric(shade), elevation, z = low.yld)) +geom_raster(aes(fill=low.yld)) +
+  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Canopy Gap [%]")+
+  labs(fill="Probability") + theme(text=element_text(size=14)) + ggtitle("Low Yielding Farms")
+
+#shade as a predictor of vulnerability
+vm<-glm(vulnerable~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm)
+vm.1<-glm(vulnerable~poly(GapDry,2)+poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.1)
+vm.2<-glm(vulnerable~poly(GapDry,2)+elevation*patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.2)
+vm.3<-glm(vulnerable~GapDry*patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.3)
+vm.4<-glm(vulnerable~poly(GapDry,2)+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.4)
+vm.5<-glm(vulnerable~GapDry+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.5)
+vm.6<-glm(vulnerable~poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.6)
+vm.7<-glm(vulnerable~poly(elevation,2)+patcharea+GapDry,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vm.7)
+
+anova(vm,vm.1,vm.2,vm.3,vm.4,vm.5,vm.6,vm.7,test="Chisq")
+anova(vm.1,vm.4,test="Chisq")
+
+plot(allEffects(vm.1))
+plot(allEffects(vm.4))
+plot(allEffects(vm.6))
+plot(allEffects(vm.7))
+
+#R2 of sm.1
+1-vm.4$deviance/vm.4$null.deviance
+
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerable.landscape.txt")
+summary(vm.4)
+sink()
+
+z.sv<-data.frame()
+for(i in 1:length(elev)){
+  for(j in 1:length(shade)){
+    pi.hat = predict.glm(vm.4, data.frame(GapDry=shade[j],elevation=elev[i]),
+                         type="response", se.fit=TRUE)
+    z.sv[i,j]<-pi.hat$fit  }
+}
+colnames(z.sv)<-shade
+z.sv$elevation<-elev
+
+z_sv.v<-gather(z.sv,key="shade",value="vul",-elevation)
+
+t2<-ggplot(z_sv.v, aes(as.numeric(shade), elevation, z = vul)) +geom_raster(aes(fill=vul)) +
+  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Canopy Gap [%]")+
+  labs(fill="Probability") + theme(text=element_text(size=14)) + ggtitle("Vulnerable Farmers")
+ggarrange(t1,t2,ncol=2,nrow=1,common.legend = T,labels="auto",legend="right")
+
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Landscape.management.lowvul.pdf",height=5,width=10)
+
+#shade as a predictor of income loss
+im<-glm(log.tot~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=gaussian(link="identity"))
+summary(im)
+im.1<-glm(log.tot~poly(GapDry,2)+poly(elevation,2)+patcharea,data=dF.summ,family=gaussian(link="identity"))
+summary(im.1)
+im.2<-glm(log.tot~poly(GapDry,2)+elevation*patcharea,data=dF.summ,family=gaussian(link="identity"))
+summary(im.2)
+im.2<-glm(log.tot~GapDry*patcharea+poly(elevation,2),data=dF.summ,family=gaussian(link="identity"))
+summary(im.2)
+im.3<-glm(log.tot~poly(GapDry,2)+poly(elevation,2),data=dF.summ,family=gaussian(link="identity"))
+summary(im.3)
+im.4<-glm(log.tot~GapDry+elevation+patcharea,data=dF.summ,family=gaussian(link="identity"))
+summary(im.4)
+im.5<-glm(log.tot~poly(elevation,2)+patcharea,data=dF.summ,family=gaussian(link="identity"))
+summary(im.5)
+im.null<-glm(log.tot~1,data=dF.summ,family=gaussian(link="identity"))
+
+anova(im.null,im,im.1,im.2,im.3,im.4,im.5,test="Chisq")
+anova(im,im.1,im.2,im.3,im.4,im.5,test="Chisq")
+#R2 of sm.1
+1-im.1$deviance/im.1$null.deviance
+
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerable.landscape.txt")
+summary(im.1)
+sink()
+
+p1<-plot(allEffects(im.1)[[1]],ylab="Income Log Ratio",xlab="Canopy Gap [%]",main="Canopy Gap Effect")
+p2<-plot(allEffects(im.1)[[2]],ylab="Income Log Ratio",xlab="Elevation [m]",main="Elevation Effect")
+p3<-plot(allEffects(im.1)[[3]],ylab="Income Log Ratio",xlab="Patch Area [ha]",main="Patch Area Effect")
+class(p1) <- class(p2) <- class(p3) <- "trellis"
+
+pdf("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Landscape.management.incomeratio.pdf",height=5,width=15)
+gridExtra::grid.arrange(p1, p2, p3, ncol=3,nrow=1)
+dev.off()
+
+#is high shade coffee more likely in buffer?
+bm<-glm(b.ffer~scale(GapDry),data=dF.summ,family=quasibinomial(link="logit"))
+summary(bm)
+
+bm.1<-glm(vulnerable~b.ffer,data=dF.summ,family=quasibinomial(link="logit"))
+summary(bm.1)
+1-bm.1$deviance/bm.1$null.deviance
+bm.null<-glm(vulnerable~1,data=dF.summ,family=quasibinomial(link="logit"))
+
+anova(bm.null,bm.1,test="Chisq")
+
+bm.2<-lm(GapDry~b.ffer,data=dF.summ)
+summary(bm.2)
+
+
+
+#does patch area relate to canopy gap? nope
+dm<-glm(GapDry~patcharea*elevation,data=dF.summ,family=gaussian(link="identity"))
+summary(dm)
+dm.1<-glm(GapDry~patcharea+elevation,data=dF.summ,family=gaussian(link="identity"))
+summary(dm.1)
+dm.2<-glm(GapDry~patcharea+poly(elevation,2),data=dF.summ,family=gaussian(link="identity"))
+summary(dm.2)
+
+
+#coffee land area predict low yielding farms
+clm<-glm(low.yield.bin~arm::rescale(coffee.area.ha),data=dF.summ,family=quasibinomial(link="logit"))
+summary(clm)
+
+#landscape features predict low yielding and vulnerable
+vlm<-glm(vul.low~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
+summary(vlm)
+
+#dependence on coffee income as prediction of low yielding
+plm<-glm(low.yield.bin~Coffee.income.percent,data=dF.summ,family=quasibinomial(link="logit"))
+summary(plm)
+
+#TerraClim Figures
+terra_clim<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
+
+#anomalies around year of study, with harvesting dates
+harvest<-data_frame(c("2014-10-01","2015-10-01","2016-10-01"))
+colnames(harvest)<-"harvest.date"
+g1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
+  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
+  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
+
+g2<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,vpd_anom)) + geom_bar(stat="identity") + theme_classic() +
+  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
+  ylab("Vapour Pressure Deficit\nAnomaly [kPa]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
+
+g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
+  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
+  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
+ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClim.Anom.Comparison.pdf",height=10,width=10)
+
+#need to compare measures to one large metstation in Doraani
+library(lubridate)
+met_ppt<-read_csv(paste0(getwd(),"/MetData/ECO_12_monthlyppt.csv"))
+met_summ<-read_csv(paste0(getwd(),"/MetData/ECO_12_summary.csv"))
+met_summ$month <- as.Date(paste(year(met_summ$day),month(met_summ$day),"01",sep="-"),format="%Y-%m-%d")
+met_comp <- met_summ %>% group_by(month) %>% summarise(max_temp=mean(Tmax,na.rm=T),min_temp=mean(Tmin,na.rm=T),vpd=mean(VPDmax,na.rm=T))
+
+#combining satellite and ground measurements for comparison
+sat_anom<-terra_clim %>% filter(site=="B13")
+
+met_comp<-met_comp %>% rename(Date=month,g.max_temp=max_temp,g.min_temp=min_temp,g.vpd=vpd)
+met_comp<-left_join(met_comp,sat_anom %>% select(Date,vpd,tmax),by="Date")
+met_ppt<-met_ppt %>% rename(Date=month)
+met_ppt<-left_join(met_ppt,sat_anom %>% select(Date,ppt),by="Date")
+
+#plot the measurements
+lm_eqn<-lm(tmax~g.max_temp,data=met_comp)
+g1<-met_comp %>% ggplot() + geom_point(aes(g.max_temp,tmax)) + theme_classic() + ylab("TerraClim Max T [C]") +
+  xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,tmax),method="lm") + 
+  annotate("text",x=23,y=30,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T)
+
+#met_comp<-met_comp %>% mutate(g.vpd=g.vpd/10)
+lm_eqn3<-lm(vpd~g.vpd,data=met_comp)
+g3<-met_comp %>% ggplot() + geom_point(aes(g.vpd/10,vpd)) + theme_classic() + ylab("TerraClim VPD [kPa]") +
+  xlab("Measured VPD [kPa]") + geom_smooth(aes(g.vpd/10,vpd),method="lm") + 
+  annotate("text",x=1.0,y=2.0,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn3)$adj.r.squared,2)),parse=T)
+#
+lm_eqn4<-lm(ppt~Tppt,data=met_ppt)
+g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,ppt)) + theme_classic() + ylab("TerraClim Precipitation [mm]") +
+  xlab("Measured Precipitation [mm]") + geom_smooth(aes(Tppt,ppt),method="lm") +
+  annotate("text",x=50,y=350,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn4)$adj.r.squared,2)),parse=T)
+
+ggarrange(g1,g3,g4,ncol=3,nrow=1,labels="auto")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClimvsGroundMeasures.pdf",width=9, height=3)
+
+#######extra code########
+#library(arm)
+tm<-glm(all.years~patcharea+elevation,data=dF.summ,family=quasibinomial(link="logit"))
+tm.1<-glm(all.years~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
+tm.2<-glm(all.years~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+
+anova(tm,tm.1,tm.2)
+
+
+tm2<-glm(low.yield.bin~elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
+tm2.1<-glm(low.yield.bin~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
+tm2.2<-glm(low.yield.bin~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
+
+anova(tm2,tm2.1,tm2.2)
+
+sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.TwoYears.landscape.txt")
+summary(tm2)
+sink()
+
 
 #do for two years
 tm1415<-glm(low.yield1415.bin~patcharea+elevation,data=dF.summ,family=quasibinomial(link="logit"))
@@ -541,224 +778,3 @@ pv5<-glm(Coffee.income.quartile~elevation+patcharea,data=dF.summ,family=gaussian
 #sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerability.landscape.txt")
 summary(pv5)
 sink()
-
-
-#shade diversity and leguminous trees do not predict low yielding farms, but canopy gap?
-sm<-glm(all.years~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(sm)
-sm.1<-glm(all.years~poly(GapDry,2)+poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(sm.1)
-sm.2<-glm(all.years~poly(GapDry,2)+elevation*patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(sm.2)
-sm.3<-glm(all.years~GapDry*patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-summary(sm.3)
-sm.4<-glm(all.years~poly(GapDry,2)+elevation,data=dF.summ,family=quasibinomial(link="logit"))
-summary(sm.4)
-sm.5<-glm(all.years~patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-sm.6<-glm(all.years~poly(GapDry,2)+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-sm.7<-glm(all.years~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(sm.7)
-
-s.null<-glm(all.years~1,data=dF.summ,family=quasibinomial(link="logit"))
-
-anova(s.null,sm,sm.1,sm.2,sm.3,sm.4,sm.5,sm.6,test="Chisq")
-anova(s.null,sm,sm.1,sm.4,sm.5,test="Chisq")
-#R2 of sm.1
-1-sm.4$deviance/sm.4$null.deviance
-
-library(effects)
-
-plot(allEffects(sm))
-plot(allEffects(sm.1))
-plot(allEffects(sm.2))
-plot(allEffects(sm.3))
-plot(allEffects(sm.4))
-plot(allEffects(sm.7))
-
-sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/LowYield.AllYears.landscape.txt")
-summary(sm.4)
-sink()
-
-elev<-seq(as.integer(min(dF.summ$elevation)),as.integer(max(dF.summ$elevation)),by=5)
-shade<-seq(as.integer(min(dF.summ$GapDry)),as.integer(max(dF.summ$GapDry)),by=0.25)
-
-z.s<-data.frame()
-for(i in 1:length(elev)){
-  for(j in 1:length(shade)){
-    pi.hat = predict.glm(sm.4, data.frame(GapDry=shade[j],elevation=elev[i]),
-                         type="response", se.fit=TRUE)
-    z.s[i,j]<-pi.hat$fit  }
-}
-colnames(z.s)<-shade
-z.s$elevation<-elev
-
-z_s.v<-gather(z.s,key="shade",value="low.yld",-elevation)
-
-t1<-ggplot(z_s.v, aes( as.numeric(shade), elevation, z = low.yld)) +geom_raster(aes(fill=low.yld)) +
-  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Canopy Gap [%]")+
-  labs(fill="Probability") + theme(text=element_text(size=14)) + ggtitle("Low Yielding Farms")
-
-#shade as a predictor of vulnerability
-vm<-glm(vulnerable~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm)
-vm.1<-glm(vulnerable~poly(GapDry,2)+poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.1)
-vm.2<-glm(vulnerable~poly(GapDry,2)+elevation*patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.2)
-vm.3<-glm(vulnerable~GapDry*patcharea+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.3)
-vm.4<-glm(vulnerable~poly(GapDry,2)+poly(elevation,2),data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.4)
-vm.5<-glm(vulnerable~GapDry+elevation+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.5)
-vm.6<-glm(vulnerable~poly(elevation,2)+patcharea,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.6)
-vm.7<-glm(vulnerable~poly(elevation,2)+patcharea+GapDry,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vm.7)
-
-anova(vm,vm.1,vm.2,vm.3,vm.4,vm.5,vm.6,vm.7,test="Chisq")
-anova(vm.1,vm.4,test="Chisq")
-
-plot(allEffects(vm.1))
-plot(allEffects(vm.4))
-plot(allEffects(vm.6))
-plot(allEffects(vm.7))
-
-#R2 of sm.1
-1-vm.4$deviance/vm.4$null.deviance
-
-sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerable.landscape.txt")
-summary(vm.4)
-sink()
-
-z.sv<-data.frame()
-for(i in 1:length(elev)){
-  for(j in 1:length(shade)){
-    pi.hat = predict.glm(vm.4, data.frame(GapDry=shade[j],elevation=elev[i]),
-                         type="response", se.fit=TRUE)
-    z.sv[i,j]<-pi.hat$fit  }
-}
-colnames(z.sv)<-shade
-z.sv$elevation<-elev
-
-z_sv.v<-gather(z.sv,key="shade",value="vul",-elevation)
-
-t2<-ggplot(z_sv.v, aes(as.numeric(shade), elevation, z = vul)) +geom_raster(aes(fill=vul)) +
-  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Canopy Gap [%]")+
-  labs(fill="Probability") + theme(text=element_text(size=14)) + ggtitle("Vulnerable Farmers")
-ggarrange(t1,t2,ncol=2,nrow=1,common.legend = T,labels="auto",legend="right")
-
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Landscape.management.lowvul.pdf",height=5,width=10)
-
-#shade as a predictor of income loss
-im<-glm(log.tot~poly(GapDry,2)+elevation+patcharea,data=dF.summ,family=gaussian(link="identity"))
-summary(im)
-im.1<-glm(log.tot~poly(GapDry,2)+poly(elevation,2)+patcharea,data=dF.summ,family=gaussian(link="identity"))
-summary(im.1)
-im.2<-glm(log.tot~poly(GapDry,2)+elevation*patcharea,data=dF.summ,family=gaussian(link="identity"))
-summary(im.2)
-im.2<-glm(log.tot~GapDry*patcharea+poly(elevation,2),data=dF.summ,family=gaussian(link="identity"))
-summary(im.2)
-im.3<-glm(log.tot~poly(GapDry,2)+poly(elevation,2),data=dF.summ,family=gaussian(link="identity"))
-summary(im.3)
-im.4<-glm(log.tot~GapDry+elevation+patcharea,data=dF.summ,family=gaussian(link="identity"))
-summary(im.4)
-im.5<-glm(log.tot~poly(elevation,2)+patcharea,data=dF.summ,family=gaussian(link="identity"))
-summary(im.5)
-im.null<-glm(log.tot~1,data=dF.summ,family=gaussian(link="identity"))
-
-anova(im.null,im,im.1,im.2,im.3,im.4,im.5,test="Chisq")
-anova(im,im.1,im.2,im.3,im.4,im.5,test="Chisq")
-#R2 of sm.1
-1-im.1$deviance/im.1$null.deviance
-
-sink("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Vulnerable.landscape.txt")
-summary(im.1)
-sink()
-
-p1<-plot(allEffects(im.1)[[1]],ylab="Income Log Ratio",xlab="Canopy Gap [%]",main="Canopy Gap Effect")
-p2<-plot(allEffects(im.1)[[2]],ylab="Income Log Ratio",xlab="Elevation [m]",main="Elevation Effect")
-p3<-plot(allEffects(im.1)[[3]],ylab="Income Log Ratio",xlab="Patch Area [ha]",main="Patch Area Effect")
-class(p1) <- class(p2) <- class(p3) <- "trellis"
-
-pdf("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/Landscape.management.incomeratio.pdf",height=5,width=15)
-gridExtra::grid.arrange(p1, p2, p3, ncol=3,nrow=1)
-dev.off()
-
-
-#does patch area relate to canopy gap? nope
-dm<-glm(GapDry~patcharea*elevation,data=dF.summ,family=gaussian(link="identity"))
-summary(dm)
-dm.1<-glm(GapDry~patcharea+elevation,data=dF.summ,family=gaussian(link="identity"))
-summary(dm.1)
-dm.2<-glm(GapDry~patcharea+poly(elevation,2),data=dF.summ,family=gaussian(link="identity"))
-summary(dm.2)
-
-
-#coffee land area predict low yielding farms
-clm<-glm(low.yield.bin~arm::rescale(coffee.area.ha),data=dF.summ,family=quasibinomial(link="logit"))
-summary(clm)
-
-#landscape features predict low yielding and vulnerable
-vlm<-glm(vul.low~patcharea*elevation,data=dF.summ,family=quasibinomial(link="logit"))
-summary(vlm)
-
-#dependence on coffee income as prediction of low yielding
-plm<-glm(low.yield.bin~Coffee.income.percent,data=dF.summ,family=quasibinomial(link="logit"))
-summary(plm)
-
-#TerraClim Figures
-terra_clim<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
-
-#anomalies around year of study, with harvesting dates
-harvest<-data_frame(c("2014-10-01","2015-10-01","2016-10-01"))
-colnames(harvest)<-"harvest.date"
-g1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
-  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
-
-g2<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,vpd_anom)) + geom_bar(stat="identity") + theme_classic() +
-  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Vapour Pressure Deficit\nAnomaly [kPa]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
-
-g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
-  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
-ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClim.Anom.Comparison.pdf",height=10,width=10)
-
-#need to compare measures to one large metstation in Doraani
-library(lubridate)
-met_ppt<-read_csv(paste0(getwd(),"/MetData/ECO_12_monthlyppt.csv"))
-met_summ<-read_csv(paste0(getwd(),"/MetData/ECO_12_summary.csv"))
-met_summ$month <- as.Date(paste(year(met_summ$day),month(met_summ$day),"01",sep="-"),format="%Y-%m-%d")
-met_comp <- met_summ %>% group_by(month) %>% summarise(max_temp=mean(Tmax,na.rm=T),min_temp=mean(Tmin,na.rm=T),vpd=mean(VPDmax,na.rm=T))
-
-#combining satellite and ground measurements for comparison
-sat_anom<-terra_clim %>% filter(site=="B13")
-
-met_comp<-met_comp %>% rename(Date=month,g.max_temp=max_temp,g.min_temp=min_temp,g.vpd=vpd)
-met_comp<-left_join(met_comp,sat_anom %>% select(Date,vpd,tmax),by="Date")
-met_ppt<-met_ppt %>% rename(Date=month)
-met_ppt<-left_join(met_ppt,sat_anom %>% select(Date,ppt),by="Date")
-
-#plot the measurements
-lm_eqn<-lm(tmax~g.max_temp,data=met_comp)
-g1<-met_comp %>% ggplot() + geom_point(aes(g.max_temp,tmax)) + theme_classic() + ylab("TerraClim Max T [C]") +
-  xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,tmax),method="lm") + 
-  annotate("text",x=23,y=30,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T)
-
-#met_comp<-met_comp %>% mutate(g.vpd=g.vpd/10)
-lm_eqn3<-lm(vpd~g.vpd,data=met_comp)
-g3<-met_comp %>% ggplot() + geom_point(aes(g.vpd/10,vpd)) + theme_classic() + ylab("TerraClim VPD [kPa]") +
-  xlab("Measured VPD [kPa]") + geom_smooth(aes(g.vpd/10,vpd),method="lm") + 
-  annotate("text",x=1.0,y=2.0,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn3)$adj.r.squared,2)),parse=T)
-#
-lm_eqn4<-lm(ppt~Tppt,data=met_ppt)
-g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,ppt)) + theme_classic() + ylab("TerraClim Precipitation [mm]") +
-  xlab("Measured Precipitation [mm]") + geom_smooth(aes(Tppt,ppt),method="lm") +
-  annotate("text",x=50,y=350,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn4)$adj.r.squared,2)),parse=T)
-
-ggarrange(g1,g3,g4,ncol=3,nrow=1,labels="auto")
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClimvsGroundMeasures.pdf",width=9, height=3)
-
