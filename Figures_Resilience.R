@@ -746,6 +746,22 @@ g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax
 ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClim.Anom.Comparison.pdf",height=10,width=10)
 
+#compare conditions in year 1 and year 2 separately
+s1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2015&year<2016),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
+  ylab("Maximum Temperature\nAnomaly [C]") + xlab("") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
+  ggtitle("2015") + theme(text = element_text(size = 16))
+s2<-ggplot(terra_clim %>% filter(site=="B13"&year>=2016&year<2017),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
+  ylab("") + xlab("") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
+  ggtitle("2016") + theme(text = element_text(size = 16))
+s3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2015&year<2016),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
+  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
+  ggtitle("") + theme(text = element_text(size = 16))
+s4<-ggplot(terra_clim %>% filter(site=="B13"&year>=2016&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
+  ylab("") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
+  ggtitle("") + theme(text = element_text(size = 16))
+ggarrange(s1,s2,s3,s4,align="hv",labels="auto")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Conferences/Agroforestry/TerraClim.Anom.Comparison.pdf",height=7,width=10)
+
 #need to compare measures to one large metstation in Doraani
 library(lubridate)
 met_ppt<-read_csv(paste0(getwd(),"/MetData/ECO_12_monthlyppt.csv"))

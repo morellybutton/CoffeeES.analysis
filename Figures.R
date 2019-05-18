@@ -42,6 +42,13 @@ g3<-ggplot(dF.2,aes(income.2016,color="2016")) + geom_freqpoly(binwidth=100,size
 ggarrange(g1,g2,g3,ncol=3,nrow=1,common.legend=T)
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/ShrubYieldIncome_Comparison.pdf",height=4,width=13)
 
+#create figure of sampling design (Management gradient)
+ggplot(dF.1 %>% filter(year==2014)) + geom_point(aes(elevation,GapDry,color=patcharea),size=3) + scale_color_viridis_c(name="Patch Area [ha]") +
+  theme_classic() + xlab("Elevation [m]") + ylab("Canopy Gap [%]") + 
+  theme(text = element_text(size = 16),legend.position = "top",legend.spacing.x = unit(0.5, 'cm'),legend.text = element_text(margin = margin(t = 10))) + 
+  ylim(20,75) + guides(color = guide_colourbar(label.theme = element_text( angle = 45)))
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Conferences/Agroforestry/ManagementGradient.Coffee.pdf",height=5,width=5)
+
 #create yield model figures, 2014 and yield diff for 2015 & 2016
 
 #2014
@@ -177,7 +184,7 @@ z_g.15<-gather(z.15,key="patch",value="yld_diff",-elevation)
 
 g2<-ggplot(z_g.15, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield Difference (2015)") + theme(text=element_text(size=12))
+  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield\nDifference (2015)") + theme(text=element_text(size=16))
 #ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Coffee_ES/Model.elev.patcharea.2015.pdf",height=5,width=5)
 
 #for 2016
@@ -196,7 +203,7 @@ z_g.16<-gather(z.16,key="patch",value="yld_diff",-elevation)
 
 g3<-ggplot(z_g.16, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield Difference (2016)") + theme(text=element_text(size=12))
+  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield\nDifference (2016)") + theme(text=element_text(size=16))
 
 #do for 2014 yields
 tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.confint.csv"))
@@ -213,7 +220,7 @@ z_g.14<-gather(z.14,key="patch",value="yld",-elevation)
 
 g1<-ggplot(z_g.14, aes( as.numeric(patch), elevation, z = yld)) +geom_raster(aes(fill=yld)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Yield") + ggtitle("Shrub Yield (2014)") + theme(text=element_text(size=12))
+  labs(fill="Yield") + ggtitle("Shrub Yield\n(2014)") + theme(text=element_text(size=16))
 
 #do for Leguminous Trees vs Shade Diversity
 legume<-seq(as.integer(min(d.F.new15$BA.legume)),as.integer(max(d.F.new15$BA.legume)),by=0.30)
@@ -237,7 +244,7 @@ s_g.14<-gather(s.14,key="diversity",value="yld",-legume)
 
 g4<-ggplot(s_g.14, aes( as.numeric(diversity), legume, z = yld)) +geom_raster(aes(fill=yld)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
-  labs(fill="Yield") + ggtitle("Shrub Yield (2014)") + theme(text=element_text(size=12))
+  labs(fill="Yield") + ggtitle("Shrub Yield\n(2014)") + theme(text=element_text(size=16))
 
 #do for 2015 yield difference
 tmp.15<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.confint.csv"))
@@ -255,7 +262,7 @@ s_g.15<-gather(s.15,key="diversity",value="yld_diff",-legume)
 
 g5<-ggplot(s_g.15, aes( as.numeric(diversity), legume, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
-  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield Difference (2015)") + theme(text=element_text(size=12))
+  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield\nDifference (2015)") + theme(text=element_text(size=16))
 
 #do for 2016 yield difference
 tmp.16<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff16.delta6.confint.csv"))
@@ -273,17 +280,18 @@ s_g.16<-gather(s.16,key="diversity",value="yld_diff",-legume)
 
 g6<-ggplot(s_g.16, aes( as.numeric(diversity), legume, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
-  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield Difference (2015)") + theme(text=element_text(size=12))
+  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield\nDifference (2015)") + theme(text=element_text(size=16))
 
 #yields
-c1<-ggarrange(g1,g4,ncol=1,nrow=2,common.legend = T,legend="right",font.label = list(size = 13))
+c1<-ggarrange(g1,g4,ncol=1,nrow=2,common.legend = T,legend="right",font.label = list(size = 18))
 #ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Coffee_ES/Model.yield.elev.patcharea.pdf",height=7,width=4)
 
 #yield differences
-c2<-ggarrange(g2,g3,g5,g6,ncol=2,nrow=2,common.legend = T,legend="right",font.label = list(size = 13))
+c2<-ggarrange(g2,g3,g5,g6,ncol=2,nrow=2,common.legend = T,legend="right",font.label = list(size = 18))
 
-ggarrange(c1,c2,nrow=1,ncol=2,widths=c(1,2))
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Coffee_ES/Model.yield.diffyld.elev.patcharea.pdf",height=6,width=12)
+ggarrange(c1,c2,nrow=1,ncol=2,align="hv",widths=c(1.05,2))
+
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Conferences/Agroforestry/Model.yield.diffyld.elev.patcharea.pdf",height=6,width=12)
 
 #take difference between 2015 and 2016
 #z_g.combo<-left_join(z_g.15,z_g.16,by=c("elevation","patch"))
