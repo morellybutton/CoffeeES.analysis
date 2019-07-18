@@ -5,42 +5,10 @@ library(AICcmodavg)
 library(ggpubr)
 setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu")
 
-#create figure of yield collapse, histogram for each year
+#create figure of yield collapse, don't need to, it is in Figure_Resilience.R
 
 dF.1<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
 dF.2<-read.csv(paste0(getwd(),"/Analysis/ES/Yield.income.input.variables.csv"))
-
-g1<-ggplot(dF.1[dF.1$Shrub.kg>0&dF.1$year==2014,],aes(Shrub.kg,color="2014")) + geom_freqpoly(binwidth=0.1,size=1) + xlab("Yield [kg/shrub]") + ylab("Number of Farms")+
-  geom_freqpoly(data=dF.1[dF.1$Shrub.kg>0&dF.1$year=="2015",],binwidth=0.05,aes(color="2015"),size=1)+geom_freqpoly(data=dF.1[dF.1$Shrub.kg>0&dF.1$year==2016,],binwidth=0.05,aes(color="2016"),size=1)+
-  ggtitle("Shrub Yields of Fresh Cherries")+
-  #scale_fill_discrete(aes(name="Year"))+
-  theme_classic()+theme(text = element_text(size = 14)
-    ,legend.key = element_blank()
-    ,legend.position="bottom"
-    ,legend.title = element_blank())
-#
-#calculate annual harvests (total)
-dF.1$est.yield<-dF.1$Shrub.kg*dF.1$density
-g2<-ggplot(dF.1 %>% filter(year==2014),aes(est.yield,color="2014")) + geom_freqpoly(binwidth=75,size=1) + xlab("Yield [kg/ha]") + ylab("")+
-  geom_freqpoly(data=dF.1 %>% filter(year==2015),binwidth=50,aes(est.yield,color="2015"),size=1)+geom_freqpoly(data=dF.1 %>% filter(year==2016),binwidth=50, aes(est.yield,color="2016"),size=1) +
-  ggtitle("Per Hectare Yields of Fresh Cherries")+
-  #scale_fill_discrete(aes(name="Year"))+
-  theme_classic()+theme(text = element_text(size = 14)
-                        ,legend.key = element_blank()
-                        ,legend.position="bottom"
-                        ,legend.title = element_blank())
-g3<-ggplot(dF.2,aes(income.2016,color="2016")) + geom_freqpoly(binwidth=100,size=1) + xlab("Income [US$]") + ylab("") +
-  geom_freqpoly(data=dF.2,binwidth=100,aes(income.2015,color="2015"),size=1) + geom_freqpoly(data=dF.2,binwidth=100, aes(income.2014,color="2014"),size=1) +
-  ggtitle("Total Coffee Income")+
-  #scale_fill_discrete(aes(name="Year"))+
-  theme_classic()+theme(text = element_text(size = 14)
-                        ,legend.key = element_blank()
-                        ,legend.position="bottom"
-                        ,legend.title = element_blank())
-
-
-ggarrange(g1,g2,g3,ncol=3,nrow=1,common.legend=T)
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/ShrubYieldIncome_Comparison.pdf",height=4,width=13)
 
 #create figure of sampling design (Management gradient)
 ggplot(dF.1 %>% filter(year==2014)) + geom_point(aes(elevation,GapDry,color=patcharea),size=3) + scale_color_viridis_c(name="Patch Area [ha]") +
@@ -291,7 +259,7 @@ c2<-ggarrange(g2,g3,g5,g6,ncol=2,nrow=2,common.legend = T,legend="right",font.la
 
 ggarrange(c1,c2,nrow=1,ncol=2,align="hv",widths=c(1.05,2))
 
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Conferences/Agroforestry/Model.yield.diffyld.elev.patcharea.pdf",height=6,width=12)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Conferences/Agroforestry/Model.yield.diffyld.elev.patcharea.pdf",height=7,width=12)
 
 #take difference between 2015 and 2016
 #z_g.combo<-left_join(z_g.15,z_g.16,by=c("elevation","patch"))

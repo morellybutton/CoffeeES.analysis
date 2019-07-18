@@ -46,7 +46,7 @@ d.F <- left_join(d.F,low.yield15,by=c("Plot","Shrub.id","year"))
 d.F <- d.F %>% mutate(low.yield15=replace(low.yield15,is.na(low.yield15)&year==2015,0))
 d.F <- left_join(d.F,low.yield16,by=c("Plot","Shrub.id","year"))
 d.F <- d.F %>% mutate(low.yield16=replace(low.yield16,is.na(low.yield16)&year==2016,0))
-#d.F <- d.F %>% group_by(Plot,Shrub.id,year) %>% mutate(low.yield=sum(low.yield14,low.yield15,low.yield16,na.rm=T))
+d.F <- d.F %>% group_by(Plot,Shrub.id,year) %>% mutate(low.yield=sum(low.yield14,low.yield15,low.yield16,na.rm=T))
 
 #take sum of low yielding shrubs and only assign low.yield.bin 1 if sum is >=4
 d.F.plot <- d.F %>% group_by(Plot,year) %>% summarise(Shrub.kg=median(Shrub.kg,na.rm=T),Tot.fruits=median(Tot.fruits,na.rm=T),fruitset=median(fruitset,na.rm=T),
@@ -103,7 +103,7 @@ library(MuMIn)
 library(arm)
 library(lattice)
 library(lme4)
-library(plotly)
+#library(plotly)
 
 d.F.new<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
 
@@ -129,9 +129,13 @@ pdf(paste0(getwd(),"/Analysis/ES/Plot.2016logylddiff_norm.pdf"),width=8,height=8
 qqp(d.F.new$logdiff[d.F.new$year=="2016"], "norm")
 dev.off()
 
+#do a corrplot
+tmp14<-d.F.new.14 %>% dplyr::select(-X.1,-Plot,-ID,-X,-Shrub.id,-kebele,-wereda,-site)
+corrplot(tmp14,color=TRUE)
+
 #2014
 fm<-lm(Shrub.kg~rescale(labour) +  rescale(GapDry)+rescale(Shannon.i)*rescale(BA.legume) + rescale(Tot.P.ppm) + rescale(CN.ratio) +
-           rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + rescale(coffee.area.ha) +
+           rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + rescale(coffee.area.ha) + rescale(C.pct) +
            rescale(tmax.anom.fruit)+rescale(elevation) + rescale(patcharea) + rescale(poly(pH,2,raw=T)),data=d.F.new.14)
 summary(fm)
 
@@ -139,6 +143,14 @@ fm14<-lm(Shrub.kg~rescale(GapDry)+rescale(Shannon.i)*rescale(BA.legume) + rescal
            rescale(propCLR) + rescale(propCBB)  +
            rescale(tmax.anom.fruit)+rescale(elevation)*rescale(patcharea),data=d.F.new.14)
 summary(fm14)
+
+fm14b<-lm(Shrub.kg~rescale(labour) +rescale(Shannon.i)*rescale(BA.legume) + rescale(CN.ratio) +
+            rescale(propCBD) + rescale(propCLR) + rescale(propCBB)  +
+            rescale(elevation)*rescale(patcharea),data=d.F.new.14)
+summary(fm14b)
+
+
+
 
 #2015&2016
 #d.F.new1<-d.F.new %>% filter(!is.na(diff.yld))
@@ -154,6 +166,7 @@ d.F.new15 <- d.F.new %>% filter(year==2015&!is.na(logdiff))
 dm15<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume)+rescale(GapDry) + rescale(Tot.P.ppm) + rescale(CN.ratio) + rescale(fruitset) +
            rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + rescale(coffee.area.ha)+rescale(low.yield.bin) +
            rescale(tmax.fruit)+rescale(elevation)*rescale(patcharea),data=d.F.new15)
+summary(dm15)
 
 dm15<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(Tot.P.ppm) + rescale(fruitset) +
            rescale(propCBD) + rescale(coffee.area.ha)+
@@ -161,20 +174,33 @@ dm15<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(Tot.P.ppm) + re
 
 summary(dm15)
 
+dm15b<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(Tot.P.ppm) + rescale(fruitset) +
+           rescale(propCBD)  + rescale(coffee.area.ha) +
+           rescale(tmax.fruit)+rescale(elevation)*rescale(patcharea),data=d.F.new15)
+summary(dm15b)
+
 #2016
 d.F.new16 <- d.F.new %>% filter(year==2016&!is.na(logdiff))
 dm16<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(GapDry) + rescale(Tot.P.ppm) + rescale(CN.ratio) + rescale(fruitset) +
            rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + rescale(coffee.area.ha) + rescale(low.yield.bin) +
            rescale(tmax.fruit)+rescale(elevation)*rescale(patcharea),data=d.F.new16)
+summary(dm16)
+
 dm16<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(GapDry) + rescale(Tot.P.ppm) +
            rescale(propCBB) + rescale(coffee.area.ha) +
            rescale(tmax.fruit)+rescale(elevation)+rescale(patcharea),data=d.F.new16)
 
 summary(dm16)
 
+dm16b<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(GapDry) + rescale(Tot.P.ppm) +
+           rescale(propCBB) + rescale(coffee.area.ha) +
+           rescale(tmax.fruit)+rescale(elevation)+rescale(patcharea),data=d.F.new16)
+summary(dm16b)
+
 #check heteroskedasticity
+fm14<-fm14b
 diagnos14 <- data.frame(Resid = resid(fm14, type = "pearson"), Fitted = fitted(fm14),Variable = d.F.new.14$Plot[!is.na(d.F.new.14$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yld14_ResidualvFittedValues_all.pdf"),width=8,height=8)
+pdf(paste0(getwd(),"/Analysis/ES/Plot.yld14_ResidualvFittedValues_all.v2.pdf"),width=8,height=8)
 xyplot(Resid ~ Fitted, data = diagnos14)
 dev.off()
 
@@ -183,17 +209,19 @@ dev.off()
 #xyplot(Resid ~ Fitted, data = diagnos)
 #dev.off()
 
+dm15<-dm15b
 diagnos15 <- data.frame(Resid = resid(dm15, type = "pearson"), Fitted = fitted(dm15),Variable = d.F.new15$Plot)
-pdf(paste0(getwd(),"/Analysis/ES/Plot.2015logylddiff_ResidualvFittedValues_all.pdf"),width=8,height=8)
+pdf(paste0(getwd(),"/Analysis/ES/Plot.2015logylddiff_ResidualvFittedValues_all.v2.pdf"),width=8,height=8)
 xyplot(Resid ~ Fitted, data = diagnos15)
 dev.off()
 
+dm16<-dm16b
 diagnos16 <- data.frame(Resid = resid(dm16, type = "pearson"), Fitted = fitted(dm16),Variable = d.F.new16$Plot)
-pdf(paste0(getwd(),"/Analysis/ES/Plot.2016logylddiff_ResidualvFittedValues_all.pdf"),width=8,height=8)
+pdf(paste0(getwd(),"/Analysis/ES/Plot.2016logylddiff_ResidualvFittedValues_all.v2.pdf"),width=8,height=8)
 xyplot(Resid ~ Fitted, data = diagnos16)
 dev.off()
 
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yld14_qqplotResiduals_all.pdf"),width=8,height=8)
+pdf(paste0(getwd(),"/Analysis/ES/Plot.yld14_qqplotResiduals_all.v2.pdf"),width=8,height=8)
 qqmath(~Resid, data = diagnos14, distribution = qnorm, prepanel = prepanel.qqmathline,
        panel = function(x, ...) {
          panel.qqmathline(x, ...)
@@ -209,7 +237,7 @@ dev.off()
 #       })
 #dev.off()
 
-pdf(paste0(getwd(),"/Analysis/ES/Plot.2015logylddiff_qqplotResiduals_all.pdf"),width=8,height=8)
+pdf(paste0(getwd(),"/Analysis/ES/Plot.2015logylddiff_qqplotResiduals_all.v2.pdf"),width=8,height=8)
 qqmath(~Resid, data = diagnos15, distribution = qnorm, prepanel = prepanel.qqmathline,
        panel = function(x, ...) {
          panel.qqmathline(x, ...)
@@ -217,7 +245,7 @@ qqmath(~Resid, data = diagnos15, distribution = qnorm, prepanel = prepanel.qqmat
        })
 dev.off()
 
-pdf(paste0(getwd(),"/Analysis/ES/Plot.2016logylddiff_qqplotResiduals_all.pdf"),width=8,height=8)
+pdf(paste0(getwd(),"/Analysis/ES/Plot.2016logylddiff_qqplotResiduals_all.v2.pdf"),width=8,height=8)
 qqmath(~Resid, data = diagnos16, distribution = qnorm, prepanel = prepanel.qqmathline,
        panel = function(x, ...) {
          panel.qqmathline(x, ...)
@@ -227,11 +255,11 @@ dev.off()
 
 options(na.action = "na.fail")
 #2014
-fm14.d<-dredge(fm14)
+fm14.d<-dredge(fm14b)
 
 #picked delta of 2 because delta of 6 was >24 models
 dredg.m14<-subset(fm14.d,delta<6)
-write.csv(dredg.m14,paste0(getwd(),"/Analysis/ES/Yld.2014_dredged01.csv"))
+write.csv(dredg.m14,paste0(getwd(),"/Analysis/ES/Yld.2014_dredged02.csv"))
 
 #2015&2016
 #dm.d<-dredge(dm)
@@ -241,18 +269,18 @@ write.csv(dredg.m14,paste0(getwd(),"/Analysis/ES/Yld.2014_dredged01.csv"))
 #write.csv(dredg.m01,paste0(getwd(),"/Analysis/ES/Yld.diff_dredged01.csv"))
 
 #2015
-dm15.d<-dredge(dm15)
+dm15.d<-dredge(dm15b)
 
 #picked delta 2 because  6 was >200 models
 dredg.m15<-subset(dm15.d,delta<2)
-write.csv(dredg.m15,paste0(getwd(),"/Analysis/ES/Logyld.diff_dredged15.csv"))
+write.csv(dredg.m15,paste0(getwd(),"/Analysis/ES/Logyld.diff_dredged15.v2.csv"))
 
 #2016
-dm16.d<-dredge(dm16)
+dm16.d<-dredge(dm16b)
 
 #picked delta 2 because 6 was >50 models
 dredg.m16<-subset(dm16.d,delta<2)
-write.csv(dredg.m16,paste0(getwd(),"/Analysis/ES/Logyld.diff_dredged16.csv"))
+write.csv(dredg.m16,paste0(getwd(),"/Analysis/ES/Logyld.diff_dredged16.v2.csv"))
 
 #for 2014 yield
 cand.set.14<-list()
