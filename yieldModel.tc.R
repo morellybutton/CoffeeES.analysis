@@ -284,23 +284,29 @@ write.csv(dredg.m16,paste0(getwd(),"/Analysis/ES/Logyld.diff_dredged16.v2.csv"))
 
 #for 2014 yield
 cand.set.14<-list()
-#delta 6 has 24 models reduced to 8
+#delta 6 has 11 models
 cand.set.14[[1]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) +
                        rescale(elevation)+rescale(patcharea),data=d.F.new.14)
 cand.set.14[[2]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) +
-                       rescale(tmax.anom.fruit)+rescale(elevation),data=d.F.new.14)
+                      rescale(elevation)*rescale(patcharea),data=d.F.new.14)
 cand.set.14[[3]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) +
-                      rescale(elevation),data=d.F.new.14)
-cand.set.14[[4]]<-lm(Shrub.kg~rescale(GapDry)+rescale(Shannon.i) +
-                       rescale(tmax.anom.fruit)+rescale(elevation),data=d.F.new.14)
-cand.set.14[[5]]<-lm(Shrub.kg~rescale(Shannon.i) + rescale(CN.ratio) +
-                       rescale(tmax.anom.fruit)+rescale(elevation),data=d.F.new.14)
-cand.set.14[[6]]<-lm(Shrub.kg~rescale(Shannon.i) +
-                       rescale(tmax.anom.fruit)+rescale(elevation),data=d.F.new.14)
-cand.set.14[[7]]<-lm(Shrub.kg~rescale(Shannon.i)+rescale(BA.legume) +
-                       rescale(tmax.anom.fruit)+rescale(elevation),data=d.F.new.14)
-cand.set.14[[8]]<-lm(Shrub.kg~rescale(Shannon.i)+rescale(BA.legume) +
+                      rescale(elevation)+rescale(patcharea)+rescale(labour),data=d.F.new.14)
+cand.set.14[[4]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) +
+                       rescale(elevation)*rescale(patcharea)+rescale(labour),data=d.F.new.14)
+cand.set.14[[5]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) + rescale(CN.ratio) +
                        rescale(elevation)+rescale(patcharea),data=d.F.new.14)
+cand.set.14[[6]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) +
+                       rescale(elevation),data=d.F.new.14)
+cand.set.14[[7]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) + rescale(CN.ratio) +
+                       rescale(elevation)*rescale(patcharea),data=d.F.new.14)
+cand.set.14[[8]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) + rescale(CN.ratio) +
+                       rescale(elevation)+rescale(patcharea) + rescale(labour),data=d.F.new.14)
+cand.set.14[[9]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) + rescale(CN.ratio) +
+                       rescale(elevation)*rescale(patcharea) + rescale(labour),data=d.F.new.14)
+cand.set.14[[10]]<-lm(Shrub.kg~rescale(Shannon.i)*rescale(BA.legume) +
+                       rescale(elevation) + rescale(labour),data=d.F.new.14)
+cand.set.14[[11]]<-lm(Shrub.kg~rescale(Shannon.i)+rescale(BA.legume) +
+                        rescale(elevation)+rescale(patcharea),data=d.F.new.14)
 
 
 #for 2015 and 2016 yield difference
@@ -319,21 +325,47 @@ cand.set.14[[8]]<-lm(Shrub.kg~rescale(Shannon.i)+rescale(BA.legume) +
 
 #for 2015 yield difference
 cand.set.15<-list()
-#delta 6 has 26 models reduced to 7
+#delta 2 has 25 models
 cand.set.15[[1]]<-lm(logdiff~rescale(BA.legume) + rescale(propCBD) + rescale(coffee.area.ha)+
                       rescale(patcharea),data=d.F.new15)
 cand.set.15[[2]]<-lm(logdiff~rescale(Shannon.i) + rescale(patcharea),data=d.F.new15)
-cand.set.15[[3]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha) +
+cand.set.15[[3]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha) + rescale(propCBD) +
                        rescale(tmax.fruit)+rescale(patcharea),data=d.F.new15)
-cand.set.15[[4]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea),data=d.F.new15)
-cand.set.15[[5]]<-lm(logdiff~ rescale(coffee.area.ha)+rescale(patcharea),data=d.F.new15)
-cand.set.15[[6]]<-lm(logdiff~rescale(patcharea),data=d.F.new15)
-
+cand.set.15[[4]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[5]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea),data=d.F.new15)
+cand.set.15[[6]]<-lm(logdiff~rescale(coffee.area.ha)+rescale(patcharea),data=d.F.new15)
+cand.set.15[[7]]<-lm(logdiff~rescale(coffee.area.ha)+rescale(patcharea) + rescale(propCBD),data=d.F.new15)
+cand.set.15[[8]]<-lm(logdiff~rescale(coffee.area.ha)+rescale(patcharea) + rescale(Shannon.i),data=d.F.new15)
+cand.set.15[[9]]<-lm(logdiff~rescale(BA.legume) + rescale(Shannon.i)+rescale(patcharea),data=d.F.new15)
+cand.set.15[[10]]<-lm(logdiff~rescale(coffee.area.ha)+rescale(patcharea) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[11]]<-lm(logdiff~rescale(Shannon.i)+rescale(patcharea) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[12]]<-lm(logdiff~rescale(patcharea),data=d.F.new15)
+cand.set.15[[13]]<-lm(logdiff~rescale(Shannon.i)+rescale(patcharea) + rescale(propCBD),data=d.F.new15)
+cand.set.15[[14]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea) + rescale(elevation) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[15]]<-lm(logdiff~rescale(patcharea) + rescale(fruitset) + rescale(Shannon.i),data=d.F.new15)
+cand.set.15[[16]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea) + rescale(elevation) + rescale(tmax.fruit)  + rescale(propCBD),data=d.F.new15)
+cand.set.15[[17]]<-lm(logdiff~rescale(BA.legume) + rescale(patcharea) + rescale(propCBD),data=d.F.new15)
+cand.set.15[[18]]<-lm(logdiff~rescale(patcharea) + rescale(propCBD),data=d.F.new15)
+cand.set.15[[19]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea) + rescale(Shannon.i),data=d.F.new15)
+cand.set.15[[20]]<-lm(logdiff~rescale(coffee.area.ha) + rescale(patcharea) + rescale(propCBD) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[21]]<-lm(logdiff~rescale(patcharea) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[22]]<-lm(logdiff~rescale(BA.legume) + rescale(patcharea),data=d.F.new15)
+cand.set.15[[23]]<-lm(logdiff~rescale(coffee.area.ha)+rescale(patcharea) + rescale(elevation) + rescale(tmax.fruit),data=d.F.new15)
+cand.set.15[[24]]<-lm(logdiff~rescale(BA.legume) + rescale(coffee.area.ha)+rescale(patcharea) + rescale(Shannon.i) + rescale(propCBD),data=d.F.new15)
+cand.set.15[[25]]<-lm(logdiff~rescale(BA.legume) + rescale(patcharea) + rescale(tmax.fruit),data=d.F.new15)
 
 #for 2016 yield difference
 cand.set.16<-list()
 #delta 2 has 6 models reduced to 1
 cand.set.16[[1]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea),data=d.F.new16)
+cand.set.16[[2]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(tmax.fruit),data=d.F.new16)
+cand.set.16[[3]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(Tot.P.ppm),data=d.F.new16)
+cand.set.16[[4]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(Tot.P.ppm) + rescale(tmax.fruit),data=d.F.new16)
+cand.set.16[[5]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(propCBB),data=d.F.new16)
+cand.set.16[[6]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(propCBB) + rescale(tmax.fruit),data=d.F.new16)
+cand.set.16[[7]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(GapDry) + rescale(tmax.fruit),data=d.F.new16)
+cand.set.16[[8]]<-lm(logdiff~rescale(Shannon.i)*rescale(BA.legume) + rescale(elevation)+rescale(patcharea) + rescale(GapDry),data=d.F.new16)
+cand.set.16[[9]]<-lm(logdiff~rescale(Shannon.i)+rescale(BA.legume) + rescale(elevation)+rescale(patcharea),data=d.F.new16)
 
 ##create a vector of names to trace back models in set
 Modnames.14 <- paste("mod", 1:length(cand.set.14), sep = " ")
@@ -343,20 +375,20 @@ Modnames.16 <- paste("mod", 1:length(cand.set.16), sep = " ")
 
 ##generate AICc table
 res.table <-aictab(cand.set = cand.set.14, modnames = Modnames.14, sort = TRUE)
-write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_yld14.delta6.csv"))
+write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_yld14.delta6.v2.csv"))
 
 #res.table <-aictab(cand.set = cand.set, modnames = Modnames, sort = TRUE)
 #write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_ylddiff.delta2.csv"))
 
 res.table <-aictab(cand.set = cand.set.15, modnames = Modnames.15, sort = TRUE)
-write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_logylddiff15.delta6.csv"))
+write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_logylddiff15.delta2.csv"))
 
 res.table <-aictab(cand.set = cand.set.16, modnames = Modnames.16, sort = TRUE)
-write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_logylddiff16.delta6.csv"))
+write.csv(res.table,paste0(getwd(),"/Analysis/ES/AICtab_logylddiff16.delta2.csv"))
 
 #2014
 topmodels.avg<-model.avg(cand.set.14) 
-sink(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.txt"))
+sink(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.v2.txt"))
 summary(topmodels.avg)
 sink() 
 
@@ -369,8 +401,10 @@ vars<-list()
 #cand.set.14b<-list(cand.set.14[[1]],cand.set.14[[2]],cand.set.14[[3]])
 #lose interaction of BA.legume and Shannon index because BA.legume not commone enough across plots
 for(i in 1:nrow(x14)){
-  if(x14$Comparison[i]=="rescale(BA.legume):rescale(Shannon.i)") vars[[i]]<-data.frame(cbind(x14$Comparison[i],modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames = Modnames.14)$Mod.avg.beta,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Uncond.SE,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Lower.CL,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Upper.CL),stringsAsFactors = F)
+  if(x14$Comparison[i]=="rescale(BA.legume):rescale(Shannon.i)") vars[[i]]<-data.frame(cbind("rescale(Shannon.i):rescale(BA.legume)",modavg(cand.set.14,"rescale(Shannon.i):rescale(BA.legume)",uncond.se = "revised",modnames = Modnames.14)$Mod.avg.beta,modavg(cand.set.14,"rescale(Shannon.i):rescale(BA.legume)",uncond.se = "revised",modnames =  Modnames.14)$Uncond.SE,modavg(cand.set.14,"rescale(Shannon.i):rescale(BA.legume)",uncond.se = "revised",modnames =  Modnames.14)$Lower.CL,modavg(cand.set.14,"rescale(Shannon.i):rescale(BA.legume)",uncond.se = "revised",modnames =  Modnames.14)$Upper.CL),stringsAsFactors = F)
   else if(x14$Comparison[i]=="rescale(BA.legume)"|x14$Comparison[i]=="rescale(Shannon.i)") vars[[i]]<-data.frame(cbind(x14$Comparison[i],modavg(cand.set.14,parm=x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Mod.avg.beta,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Uncond.SE,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Lower.CL,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Upper.CL),stringsAsFactors = F)
+  else if(x14$Comparison[i]=="rescale(elevation):rescale(patcharea)") vars[[i]]<-data.frame(cbind(x14$Comparison[i],modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames = Modnames.14)$Mod.avg.beta,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Uncond.SE,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Lower.CL,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Upper.CL),stringsAsFactors = F)
+  else if(x14$Comparison[i]=="rescale(elevation)"|x14$Comparison[i]=="rescale(patcharea)") vars[[i]]<-data.frame(cbind(x14$Comparison[i],modavg(cand.set.14,parm=x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(elevation):rescale(patcharea)"))$Mod.avg.beta,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(elevation):rescale(patcharea)"))$Uncond.SE,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(elevation):rescale(patcharea)"))$Lower.CL,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14,exclude=list("rescale(elevation):rescale(patcharea)"))$Upper.CL),stringsAsFactors = F)
   else vars[[i]]<-data.frame(cbind(x14$Comparison[i],modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames = Modnames.14)$Mod.avg.beta,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Uncond.SE,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Lower.CL,modavg(cand.set.14,x14$Comparison[i],uncond.se = "revised",modnames =  Modnames.14)$Upper.CL),stringsAsFactors = F)
 }
 vars.14<-do.call(rbind.data.frame,vars)
@@ -382,38 +416,37 @@ vars.14[,2:5]<-sapply(vars.14[,2:5],as.numeric)
 #create figure of coefficients with confidence intervals
 tmp.14<-as.data.frame(t(topmodels.avg[[2]]))
 tmp.14$Comparison <- rownames(tmp.14)
+vars.14 <- vars.14 %>% mutate(Parameter=replace(Parameter,Parameter=="rescale(Shannon.i):rescale(BA.legume)","rescale(BA.legume):rescale(Shannon.i)"))
 tmp.14[,4:7]<-vars.14[match(tmp.14$Comparison,vars.14$Parameter),2:5]
 
 #add importance
+
 tmp.14$Importance<-x14[match(tmp.14$Comparison,x14$Comparison),"Importance"]
-write.csv(tmp.14,paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.confint.csv"))
+write.csv(tmp.14,paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.v2.confint.csv"))
 
 #tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.confint.csv"))
 tmp.14<-tmp.14[!is.na(tmp.14$full),]
 
 #for delta 6
 tmp.14$Comparison<-factor(tmp.14$Comparison,levels=tmp.14[order(tmp.14$Importance,decreasing=F),"Comparison"],
-                       labels=c("Soil C:N","CanopyGap","Maximum Temperature\nAnomaly (Fruiting)","Patch Area","BA Legume:\nShade Diversity","Basal Area of\nLeguminous Trees","Shade Diversity","Elevation","(Intercept)"))
-
-#add in interaction between basal area and shade diversity
-tmp.14<-tmp.14 %>% mutate(Estimate=replace(Estimate,is.na(Estimate),subset[is.na(Estimate)]))
+                       labels=c("Soil C:N","Labour","Elevation:\nPatch Area","Patch Area","BA Legume:\nShade Diversity","Shade Diversity","Basal Area of\nLeguminous Trees","Elevation","(Intercept)"))
 
 #order by importance
 tmp.14<-tmp.14[!is.na(tmp.14$Importance),]
 
 g1<-ggplot(tmp.14, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
-  geom_point(data=tmp.14 %>% filter(Comparison=="BA Legume:\nShade Diversity"),aes(Comparison, Estimate), color="red") +
+  #geom_point(data=tmp.14 %>% filter(Comparison=="BA Legume:\nShade Diversity"),aes(Comparison, Estimate), color="red") +
   theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Yield\nPer Shrub (2014)")+
   xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
   theme(text = element_text(size = 14)
         ,axis.text.x=element_text(angle = 45,hjust=1))
 g1+coord_flip()
-ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_yld14.pdf"),height=6,width=6)
+ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_yld14.v2.pdf"),height=6,width=6)
 
 
 #for 2015
 topmodels.avg.15<-model.avg(cand.set.15) 
-sink(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta6.txt"))
+sink(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.txt"))
 summary(topmodels.avg.15)
 sink() 
 
@@ -444,7 +477,7 @@ tmp.15[,4:7]<-vars.15[match(tmp.15$Comparison,vars.15$Parameter),2:5]
 
 #add importance
 tmp.15$Importance<-x15[match(tmp.15$Comparison,x15$Comparison),"Importance"]
-write.csv(tmp.15,paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.confint.csv"))
+write.csv(tmp.15,paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.v2.confint.csv"))
 
 #order by importance
 #tmp<-tmp[!is.na(tmp$Importance),]
@@ -454,7 +487,7 @@ tmp.15<-tmp.15[!is.na(tmp.15$full),]
 
 #for delta 6
 tmp.15$Comparison<-factor(tmp.15$Comparison,levels=tmp.15[order(tmp.15$Importance,decreasing=F),"Comparison"],
-                       labels=c("Maximum\nTemperature (Fruiting)","Shade Diversity","Coffee Berry\nDisease\nIncidence","Basal Area of\nLeguminous Trees","Coffee Land Area","Patch Area","(Intercept)"))
+                       labels=c("Fruitset","Elevation","Shade Diversity","Coffee Berry\nDisease\nIncidence","Maximum\nTemperature (Fruiting)","Basal Area of\nLeguminous Trees","Coffee Land Area","Patch Area","(Intercept)"))
 
 #add in interaction between basal area and shade diversity
 tmp.15<-tmp.15 %>% mutate(Estimate=replace(Estimate,is.na(Estimate),subset[is.na(Estimate)]))
@@ -469,53 +502,52 @@ g1<-ggplot(tmp.15, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upp
   theme(text = element_text(size = 14)
         ,axis.text.x=element_text(angle = 45,hjust=1))
 g1+coord_flip()
-ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_logylddiff15.pdf"),height=6,width=6)
+ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_logylddiff15.v2.pdf"),height=6,width=6)
 
 #for 2016
-#topmodels.avg.16<-model.avg(cand.set.16) 
-#sink(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff16.delta6.txt"))
-#summary(topmodels.avg.16)
-#sink() 
+topmodels.avg.16<-model.avg(cand.set.16) 
+sink(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff16.delta6.txt"))
+summary(topmodels.avg.16)
+sink() 
 
-#x16<-as.data.frame(summary(topmodels.avg.16)$importance)
-#x16$Comparison<-rownames(x16)
-#colnames(x16)<-c("Importance","Comparison")
+x16<-as.data.frame(summary(topmodels.avg.16)$importance)
+x16$Comparison<-rownames(x16)
+colnames(x16)<-c("Importance","Comparison")
+
+x16 <- x16 %>% mutate(Comparison=replace(Comparison,Comparison=="rescale(BA.legume):rescale(Shannon.i)","rescale(Shannon.i):rescale(BA.legume)"))
 
 #calculate model average and confidence intervals
-#vars<-list()
-#for(i in 1:nrow(x16)){
-#  if(x16$Comparison[i]=="rescale(elevation):rescale(patcharea)") vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Upper.CL),stringsAsFactors = F)
-#  else if(x16$Comparison[i]=="rescale(elevation)"|x16$Comparison[i]=="rescale(patcharea)") vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,parm=x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16,exclude=list("rescale(elevation):rescale(patcharea)"))$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16,exclude=list("rescale(elevation):rescale(patcharea)"))$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16,exclude=list("rescale(elevation):rescale(patcharea)"))$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16,exclude=list("rescale(elevation):rescale(patcharea)"))$Upper.CL),stringsAsFactors = F)
-#  else if(x16$Comparison[i]=="rescale(BA.legume):rescale(Shannon.i)") vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16)$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16)$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16)$Upper.CL),stringsAsFactors = F)
-#  else if(x16$Comparison[i]=="rescale(BA.legume)"|x16$Comparison[i]=="rescale(Shannon.i)") vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,parm=x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(BA.legume):rescale(Shannon.i)"))$Upper.CL),stringsAsFactors = F)
-#  else vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Upper.CL),stringsAsFactors = F)
-#}
-#vars.16<-do.call(rbind.data.frame,vars)
-#colnames(vars.16)<-c("Parameter","Estimate","Uncond.SE","Lower.CL","Upper.CL")
-#vars.16[nrow(vars.16)+1,]<-data.frame(cbind("(Intercept)",modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Uncond.SE,modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Lower.CL,modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Upper.CL),stringsAsFactors = F)
+vars<-list()
+for(i in 1:nrow(x16)){
+  if(x16$Comparison[i]=="rescale(Shannon.i):rescale(BA.legume)") vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16)$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16)$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16)$Upper.CL),stringsAsFactors = F)
+  else if(x16$Comparison[i]=="rescale(BA.legume)"|x16$Comparison[i]=="rescale(Shannon.i)") vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,parm=x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(Shannon.i):rescale(BA.legume)"))$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(Shannon.i):rescale(BA.legume)"))$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(Shannon.i):rescale(BA.legume)"))$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames =  Modnames.16,exclude=list("rescale(Shannon.i):rescale(BA.legume)"))$Upper.CL),stringsAsFactors = F)
+  else vars[[i]]<-data.frame(cbind(x16$Comparison[i],modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Uncond.SE,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Lower.CL,modavg(cand.set.16,x16$Comparison[i],uncond.se = "revised",modnames = Modnames.16)$Upper.CL),stringsAsFactors = F)
+}
+vars.16<-do.call(rbind.data.frame,vars)
+colnames(vars.16)<-c("Parameter","Estimate","Uncond.SE","Lower.CL","Upper.CL")
+vars.16[nrow(vars.16)+1,]<-data.frame(cbind("(Intercept)",modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Mod.avg.beta,modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Uncond.SE,modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Lower.CL,modavg(cand.set.16,"(Intercept)",uncond.se = "revised",modnames = Modnames.16)$Upper.CL),stringsAsFactors = F)
 
-#vars.16[,2:5]<-sapply(vars.16[,2:5],as.numeric)
+vars.16[,2:5]<-sapply(vars.16[,2:5],as.numeric)
 
 #calculate confidence intervals from standard error
 
-vars.16<-summary(cand.set.16[[1]])$coefficients
-tmp.16<-data.frame(as.character(row.names(vars.16)),stringsAsFactors = F)
-colnames(tmp.16) <- "Comparison"
-tmp.16$Estimate<-as.numeric(vars.16[,1])
-tmp.16$Uncond.SE<-as.numeric(vars.16[,2])
-tmp.16$Lower.CL<-as.numeric(confint(cand.set.16[[1]])[,1])
-tmp.16$Upper.CL<-as.numeric(confint(cand.set.16[[1]])[,2])
+tmp.16<-as.data.frame(t(topmodels.avg.16[[2]]))
+tmp.16$Comparison <- rownames(tmp.16)
 
-#create figure of coefficients with confidence intervals
-#tmp.16<-as.data.frame(t(topmodels.avg.16[[2]]))
-#tmp.16$Comparison <- rownames(tmp.16)
-#tmp.16[,4:7]<-vars.16[match(tmp.16$Comparison,vars.16$Parameter),2:5]
+tmp.16<-tmp.16 %>% mutate(Comparison=replace(Comparison,Comparison=="rescale(BA.legume):rescale(Shannon.i)","rescale(Shannon.i):rescale(BA.legume)"))
+
+tmp.16[,4:7]<-vars.16[match(tmp.16$Comparison,vars.16$Parameter),2:5]
+#tmp.16$Estimate<-as.numeric(vars.16[,1])
+#tmp.16$Uncond.SE<-as.numeric(vars.16[,2])
+#tmp.16$Lower.CL<-as.numeric(confint(cand.set.16[[1]])[,1])
+#tmp.16$Upper.CL<-as.numeric(confint(cand.set.16[[1]])[,2])
+
 
 #add importance
-#tmp.16$Importance<-x16[match(tmp.16$Comparison,x16$Comparison),"Importance"]
-tmp.16$Importance<-1
-tmp.16 <-tmp.16 %>% mutate(Importance=replace(Importance,Comparison=="(Intercept)",NA))
-write.csv(tmp.16,paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff16.delta2.confint.csv"))
+tmp.16$Importance<-x16[match(tmp.16$Comparison,x16$Comparison),"Importance"]
+#tmp.16$Importance<-1
+#tmp.16 <-tmp.16 %>% mutate(Importance=replace(Importance,Comparison=="(Intercept)",NA))
+write.csv(tmp.16,paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff16.delta2.v2.confint.csv"))
 
 #order by importance
 #tmp<-tmp[!is.na(tmp$Importance),]
@@ -525,7 +557,7 @@ write.csv(tmp.16,paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff16.delta2.
 
 #for delta 6
 tmp.16$Comparison<-factor(tmp.16$Comparison,levels=tmp.16[order(tmp.16$Importance,decreasing=F),"Comparison"],
-                          labels=c("Shade Diversity","Basal Area of\nLeguminous Trees","Elevation","Patch Area","BA Legume:\nShade Diversity","Intercept"))
+                          labels=c("Canopy Gap","Coffee Berry\nDisease\nIncidence","Soil Phosphorus","Maximum\nTemperature (Fruiting)","BA Legume:\nShade Diversity","Shade Diversity","Basal Area of\nLeguminous Trees","Elevation","Patch Area","Intercept"))
 
 #add in interaction between basal area and shade diversity
 #tmp.16<-tmp.16 %>% mutate(Estimate=replace(Estimate,is.na(Estimate),subset[is.na(Estimate)]))
@@ -540,7 +572,7 @@ g1<-ggplot(tmp.16, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upp
   theme(text = element_text(size = 14)
         ,axis.text.x=element_text(angle = 45,hjust=1))
 g1+coord_flip()
-ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_logylddiff16.pdf"),height=6,width=6)
+ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_logylddiff16.v2.pdf"),height=6,width=6)
 
 #test validity of the model 2014
 tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.confint.csv"))
