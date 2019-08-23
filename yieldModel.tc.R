@@ -434,15 +434,20 @@ tmp.14$Comparison<-factor(tmp.14$Comparison,levels=tmp.14[order(tmp.14$Importanc
 #order by importance
 tmp.14<-tmp.14[!is.na(tmp.14$Importance),]
 
-g1<-ggplot(tmp.14, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
-  #geom_point(data=tmp.14 %>% filter(Comparison=="BA Legume:\nShade Diversity"),aes(Comparison, Estimate), color="red") +
-  theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Yield\nPer Shrub (2014)")+
-  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 14)
-        ,axis.text.x=element_text(angle = 45,hjust=1))
+#add significance column
+tmp.14$sig<-1
+tmp.14<-tmp.14 %>% mutate(sig=replace(sig,Comparison=="Elevation"|Comparison=="Shade Diversity"|Comparison=="BA Legume:\nShade Diversity"|Comparison=="Patch Area",0))
+
+g1<-ggplot(tmp.14, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2,aes(color=factor(sig))) + 
+  geom_point(shape=15,size=5,aes(color=factor(sig)))+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Shrub Yield\n(2014)")+
+  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() + scale_color_grey() +
+  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="none")
+
 g1+coord_flip()
 ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_yld14.v2.pdf"),height=6,width=6)
 
+p1<-g1+coord_flip()
 
 #for 2015
 topmodels.avg.15<-model.avg(cand.set.15) 
@@ -490,20 +495,25 @@ tmp.15$Comparison<-factor(tmp.15$Comparison,levels=tmp.15[order(tmp.15$Importanc
                        labels=c("Fruitset","Elevation","Shade Diversity","Coffee Berry\nDisease\nIncidence","Maximum\nTemperature (Fruiting)","Basal Area of\nLeguminous Trees","Coffee Land Area","Patch Area","(Intercept)"))
 
 #add in interaction between basal area and shade diversity
-tmp.15<-tmp.15 %>% mutate(Estimate=replace(Estimate,is.na(Estimate),subset[is.na(Estimate)]))
+#tmp.15<-tmp.15 %>% mutate(Estimate=replace(Estimate,is.na(Estimate),subset[is.na(Estimate)]))
 
 #order by importance
 tmp.15<-tmp.15[!is.na(tmp.15$Importance),]
 
-g1<-ggplot(tmp.15, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
-  #geom_point(data=tmp.15 %>% filter(Comparison=="BA Legume:\nShade Diversity"),aes(Comparison, Estimate), color="red") +
-  theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Yield\nDifference Per Shrub (2015)")+
-  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 14)
-        ,axis.text.x=element_text(angle = 45,hjust=1))
+#add significance column
+tmp.15$sig<-1
+tmp.15<-tmp.15 %>% mutate(sig=replace(sig,Comparison=="Patch Area",0))
+
+g1<-ggplot(tmp.15, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2,aes(color=factor(sig))) + 
+  geom_point(shape=15,size=5,aes(color=factor(sig)))+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Log Yield Difference\n(2015)")+
+  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() + scale_color_grey() +
+  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="none")
+
 g1+coord_flip()
 ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_logylddiff15.v2.pdf"),height=6,width=6)
 
+p2<-g1+coord_flip()+  xlab("")
 #for 2016
 topmodels.avg.16<-model.avg(cand.set.16) 
 sink(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff16.delta6.txt"))
@@ -565,101 +575,213 @@ tmp.16$Comparison<-factor(tmp.16$Comparison,levels=tmp.16[order(tmp.16$Importanc
 #order by importance
 tmp.16<-tmp.16[!is.na(tmp.16$Importance),]
 
-g1<-ggplot(tmp.16, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
-  #geom_point(data=tmp.16 %>% filter(Comparison=="BA Legume:\nShade Diversity"),aes(Comparison, Estimate), color="red") +
-  theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Yield\nDifference Per Shrub (2016)")+
-  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 14)
-        ,axis.text.x=element_text(angle = 45,hjust=1))
+#add significance column
+tmp.16$sig<-1
+tmp.16<-tmp.16 %>% mutate(sig=replace(sig,Comparison=="Patch Area"|Comparison=="Elevation"|Comparison=="BA Legume:\nShade Diversity",0))
+
+g1<-ggplot(tmp.16, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2,aes(color=factor(sig))) + 
+  geom_point(shape=15,size=5,aes(color=factor(sig)))+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Log Yield Difference\n(2016)")+
+  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() + scale_color_grey() +
+  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="none")
+
 g1+coord_flip()
 ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_logylddiff16.v2.pdf"),height=6,width=6)
 
-#test validity of the model 2014
-tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.confint.csv"))
+p3<-g1+coord_flip() +  xlab("")
 
-d.F.new.14$z.GapDry=rescale(d.F.new.14$GapDry)
-d.F.new.14$z.Shannon.i=rescale(d.F.new.14$Shannon.i)
-d.F.new.14$z.BA.legume=rescale(d.F.new.14$BA.legume)
-d.F.new.14$z.CN.ratio=rescale(d.F.new.14$CN.ratio)
+ggpubr::ggarrange(p1,p2,p3,ncol=3,nrow=1)
+ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_combined.pdf"),height=6,width=18)
+
+#test validity of the model 2014
+tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.v2.confint.csv"))
+d.F.new<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
+
+#model yield for 2014
+d.F.new.14<-d.F.new %>% filter(year==2014)
+d.F.new.14$Shrub.kg.pred<-predict(topmodels.avg)
+
+#check output of this command
 d.F.new.14$z.elevation=rescale(d.F.new.14$elevation)
+d.F.new.14$z.BA.legume=rescale(d.F.new.14$BA.legume)
+d.F.new.14$z.Shannon.i=rescale(d.F.new.14$Shannon.i)
 d.F.new.14$z.patcharea=rescale(d.F.new.14$patcharea)
-d.F.new.14$z.tmax.anom.fruit=rescale(d.F.new.14$tmax.anom.fruit)
+d.F.new.14$z.CN.ratio=rescale(d.F.new.14$CN.ratio)
+d.F.new.14$z.labour=rescale(d.F.new.14$labour)
 
 df<-d.F.new.14 %>% group_by(Plot) %>% 
-  mutate(Shrub.kg.mod=tmp.14[tmp.14$Comparison=="(Intercept)","Estimate"]+tmp.14[tmp.14$Comparison=="rescale(GapDry)","Estimate"]*z.GapDry+tmp.14[tmp.14$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i+tmp.14[tmp.14$Comparison=="rescale(CN.ratio)","Estimate"]*z.CN.ratio+
-        tmp.14[tmp.14$Comparison=="rescale(elevation)","Estimate"]*z.elevation + tmp.14[tmp.14$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea + tmp.14[tmp.14$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume +
-         tmp.14[tmp.14$Comparison=="rescale(tmax.anom.fruit)","Estimate"]*z.tmax.anom.fruit + tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*z.BA.legume*z.Shannon.i,
-         low.yield1=1) %>% mutate(low.yield1=replace(low.yield1,low.yield<0.5,0))
+  mutate(Shrub.kg.mod=tmp.14[tmp.14$Comparison=="(Intercept)","Estimate"]+tmp.14[tmp.14$Comparison=="rescale(elevation)","Estimate"]*z.elevation +
+           tmp.14[tmp.14$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume +
+           tmp.14[tmp.14$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i +
+           tmp.14[tmp.14$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea +
+           tmp.14[tmp.14$Comparison=="rescale(CN.ratio)","Estimate"]*z.CN.ratio +
+           tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*z.BA.legume*z.Shannon.i)
 
-ggplot(df,aes(Shrub.kg,Shrub.kg.mod)) + geom_point(aes(color=factor(wereda))) + geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,0.75)+xlim(0,0.75)+
-  xlab("Observed Shrub Yield [kg]")+ylab("Modelled Shrub Yield [kg]")+
-  ggtitle("2014")+theme_classic() + labs(color="Wereda")+
+ggplot(df,aes(Shrub.kg.pred,Shrub.kg.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,1)+xlim(0,1)+
+  xlab("Predicted Shrub Yield [kg]")+ylab("Modelled Shrub Yield [kg]")+
+  ggtitle("2014")+theme_classic() +
   theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
+
+ggplot(df,aes(Shrub.kg,Shrub.kg.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,1)+xlim(0,1)+
+  xlab("Observed Shrub Yield [kg]")+ylab("Modelled Shrub Yield [kg]")+
+  ggtitle("2014")+theme_classic() +
+  theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
+
+p14.3<-ggplot(df,aes(Shrub.kg,Shrub.kg.pred)) + geom_point() + geom_abline(slope=1,intercept=0,col="red") +
+  ylim(0,1)+xlim(0,1)+
+  xlab("Observed")+ylab("Predicted")+
+  ggtitle("Model Assessment")+theme_bw() +
+  theme(text = element_text(size = 12),legend.key = element_blank(),legend.position="bottom")
+p14.3
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yld2014.norm.pdf"),width=6,height=6)
 
+#residuals vs fitted
+p14.1<-ggplot(fm14b, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
+  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
+  ggtitle("Residual vs Fitted Plot")+theme_bw()
+
+#qqplot
+p14.2 <- ggplot(fm14b, aes(qqnorm(.stdresid)[[1]], .stdresid))+geom_point(na.rm=T) +
+  geom_abline(aes(intercept=0,slope=1), col = 'red')+xlab("Theoretical Quantiles")+ylab("Standardized Residuals") +
+  ggtitle("Normal Q-Q")+theme_bw()
+  
+p14.4<-ggpubr::ggarrange(p14.1,p14.2,p14.3,ncol=2,nrow=2,labels="auto")
+
+ggpubr::ggarrange(p1,p14.4,ncol=2,nrow=1)
+ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yld2014.allgraphs.pdf"),width=12,height=6)
+
+p14<-ggpubr::ggarrange(p1,p14.4,ncol=2,nrow=1)
+
 #test validity of the model, 2015
-tmp.15<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.confint.csv"))
+tmp.15<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.v2.confint.csv"))
+
+d.F.new15<-d.F.new %>% filter(year==2015)
 
 d.F.new15$z.coffee.area.ha=rescale(d.F.new15$coffee.area.ha)
 d.F.new15$z.BA.legume=rescale(d.F.new15$BA.legume)
-#d.F.new15$z.low.yield=rescale(d.F.new15$low.yield)
-#d.F.new15$z.elevation=rescale(d.F.new15$elevation)
+d.F.new15$z.propCBD=rescale(d.F.new15$propCBD)
+d.F.new15$z.elevation=rescale(d.F.new15$elevation)
 d.F.new15$z.patcharea=rescale(d.F.new15$patcharea)
 d.F.new15$z.Shannon.i=rescale(d.F.new15$Shannon.i)
 d.F.new15$z.tmax.fruit=rescale(d.F.new15$tmax.fruit)
+d.F.new15$z.fruitset=rescale(d.F.new15$fruitset)
 
-df.15<-d.F.new15 %>% group_by(Plot,year) %>% mutate(logdiff.mod=tmp.15[tmp.15$Comparison=="(Intercept)","Estimate"]+tmp.15[tmp.15$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i +
-                                                      #tmp.15[tmp.15$Comparison=="rescale(elevation)","Estimate"]*z.elevation + 
-                                                      tmp.15[tmp.15$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea + 
-                                                      tmp.15[tmp.15$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume + tmp.15[tmp.15$Comparison=="rescale(tmax.fruit)","Estimate"]*z.tmax.fruit + 
-                                                      #tmp.15[tmp.15$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*z.BA.legume*z.Shannon.i + 
-                                                      tmp.15[tmp.15$Comparison=="rescale(coffee.area.ha)","Estimate"]*z.coffee.area.ha) #+ 
-                                                      #tmp.15[tmp.15$Comparison=="rescale(elevation):rescale(patcharea)","Estimate"]*z.elevation*z.patcharea)
+df15<-d.F.new15 %>% filter(!is.na(fruitset)&!is.na(tmax.fruit)&!is.na(coffee.area.ha)&!is.na(logdiff))
+df15$logdiff.pred<-predict(topmodels.avg.15)
 
+df15<-df15 %>% group_by(Plot,year) %>% mutate(logdiff.mod=tmp.15[tmp.15$Comparison=="(Intercept)","Estimate"]+
+                                                tmp.15[tmp.15$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume + 
+                                                tmp.15[tmp.15$Comparison=="rescale(propCBD)","Estimate"]*z.propCBD + 
+                                                tmp.15[tmp.15$Comparison=="rescale(coffee.area.ha)","Estimate"]*z.coffee.area.ha + 
+                                                tmp.15[tmp.15$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea + 
+                                                tmp.15[tmp.15$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i +
+                                                tmp.15[tmp.15$Comparison=="rescale(tmax.fruit)","Estimate"]*z.tmax.fruit + 
+                                                tmp.15[tmp.15$Comparison=="rescale(elevation)","Estimate"]*z.elevation + 
+                                                tmp.15[tmp.15$Comparison=="rescale(fruitset)","Estimate"]*z.fruitset)
+ 
+ggplot(df15,aes(logdiff.pred,logdiff.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(-6,1)+xlim(-6,1)+
+  ylab("Modelled Log Difference in Yield")+xlab("Predicted Log Difference in Yield")+
+  ggtitle("2015")+theme_classic() +
+  theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
 
-ggplot(df.15,aes(logdiff,logdiff.mod)) + geom_point(aes(color=factor(low.yield.bin))) + geom_abline(slope=1,intercept=0,linetype="dashed") +
+ggplot(df15,aes(logdiff,logdiff.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(-6,1)+xlim(-6,1)+
   xlab("Observed Log Difference in Yield")+ylab("Modelled Log Difference in Yield")+
-  ggtitle("2015")+theme_classic() + labs(shape="Year",color="Low Yielding Plot")+
+  ggtitle("2015")+theme_classic() +
   theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
+
+p15.3<-ggplot(df15,aes(logdiff,logdiff.pred)) + geom_point() + geom_abline(slope=1,intercept=0,col='red') +
+  ylim(-6,1)+xlim(-6,1)+
+  xlab("Observed")+ylab("Predicted")+
+  ggtitle("Model Assessment")+theme_bw() +
+  theme(text = element_text(size = 12),legend.key = element_blank(),legend.position="bottom")
+
+p15.3
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.logylddiff.2015.norm.pdf"),width=6,height=6)
 
+#residuals vs fitted
+p15.1<-ggplot(dm15b, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
+  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
+  ggtitle("Residual vs Fitted Plot")+theme_bw()
+
+#qqplot
+p15.2 <- ggplot(dm15b, aes(qqnorm(.stdresid)[[1]], .stdresid))+geom_point(na.rm=T) +
+  geom_abline(aes(intercept=0,slope=1), col = 'red')+xlab("Theoretical Quantiles")+ylab("Standardized Residuals") +
+  ggtitle("Normal Q-Q")+theme_bw()
+
+p15.4<-ggpubr::ggarrange(p15.1,p15.2,p15.3,ncol=2,nrow=2,labels="auto")
+
+p15<-ggpubr::ggarrange(p2,p15.4,ncol=2,nrow=1)
+p15
+ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yld2015.allgraphs.pdf"),width=12,height=6)
+
 #test validity of the model, 2016
-tmp.16<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff16.delta2.confint.csv"))
+tmp.16<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff16.delta2.v2.confint.csv"))
+
+d.F.new16<-d.F.new %>% filter(year==2016)
 
 #d.F.new16$z.coffee.area.ha=rescale(d.F.new16$coffee.area.ha)
 d.F.new16$z.BA.legume=rescale(d.F.new16$BA.legume)
-#d.F.new16$z.low.yield.bin=rescale(d.F.new16$low.yield.bin)
 d.F.new16$z.elevation=rescale(d.F.new16$elevation)
 d.F.new16$z.patcharea=rescale(d.F.new16$patcharea)
 d.F.new16$z.Shannon.i=rescale(d.F.new16$Shannon.i)
-#d.F.new16$z.tmax.fruit=rescale(d.F.new16$tmax.fruit)
-#d.F.new16$z.fruitset=rescale(d.F.new16$fruitset)
+d.F.new16$z.tmax.fruit=rescale(d.F.new16$tmax.fruit)
+d.F.new16$z.Tot.P.ppm=rescale(d.F.new16$Tot.P.ppm)
+d.F.new16$z.propCBB=rescale(d.F.new16$propCBB)
+d.F.new16$z.GapDry=rescale(d.F.new16$GapDry)
 
-df.16<-d.F.new16 %>% group_by(Plot,year) %>% mutate(logdiff.mod=tmp.16[tmp.16$Comparison=="(Intercept)","Estimate"]+tmp.16[tmp.16$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i + #tmp.16[tmp.16$Comparison=="rescale(fruitset)","Estimate"]*z.fruitset + 
-                                                      tmp.16[tmp.16$Comparison=="rescale(elevation)","Estimate"]*z.elevation + tmp.16[tmp.16$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea + 
-                                                      tmp.16[tmp.16$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume + #tmp.16[tmp.16$Comparison=="rescale(tmax.fruit)","Estimate"]*z.tmax.fruit + tmp.16[tmp.16$Comparison=="rescale(low.yield.bin)","Estimate"]*z.low.yield.bin + 
-                                                      tmp.16[tmp.16$Comparison=="rescale(Shannon.i):rescale(BA.legume)","Estimate"]*z.BA.legume*z.Shannon.i) #+ tmp.16[tmp.16$Comparison=="rescale(coffee.area.ha)","Estimate"]*z.coffee.area.ha + 
-                                                      #tmp.16[tmp.16$Comparison=="rescale(elevation):rescale(patcharea)","Estimate"]*z.elevation*z.patcharea)
+df16<-d.F.new16 %>% filter(!is.na(tmax.fruit)&!is.na(propCBB)&!is.na(logdiff))
+df16$logdiff.pred<-predict(topmodels.avg.16)
 
-ggplot(df.16,aes(logdiff,logdiff.mod)) + geom_point(aes(color=factor(low.yield.bin))) + geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(-3,1)+xlim(-3,1)+
-  xlab("Observed Log Difference in Yield")+ylab("Modelled Log Difference in Yield")+
-  ggtitle("2016")+theme_classic() + labs(shape="Year",color="Low Yielding Plot")+
+df16<-df16 %>% group_by(Plot,year) %>% mutate(logdiff.mod=tmp.16[tmp.16$Comparison=="(Intercept)","Estimate"]+
+                                                tmp.16[tmp.16$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i +
+                                                tmp.16[tmp.16$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume +
+                                                tmp.16[tmp.16$Comparison=="rescale(elevation)","Estimate"]*z.elevation + 
+                                                tmp.16[tmp.16$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea + 
+                                                tmp.16[tmp.16$Comparison=="rescale(Shannon.i):rescale(BA.legume)","Estimate"]*z.BA.legume*z.Shannon.i +
+                                                tmp.16[tmp.16$Comparison=="rescale(tmax.fruit)","Estimate"]*z.tmax.fruit +
+                                                tmp.16[tmp.16$Comparison=="rescale(Tot.P.ppm)","Estimate"]*z.Tot.P.ppm +
+                                                tmp.16[tmp.16$Comparison=="rescale(propCBB)","Estimate"]*z.propCBB +
+                                                tmp.16[tmp.16$Comparison=="rescale(GapDry)","Estimate"]*z.GapDry)
+      
+ggplot(df16,aes(logdiff.pred,logdiff.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  #ylim(-3,1)+xlim(-3,1)+
+  xlab("Predicted Log Difference in Yield")+ylab("Modelled Log Difference in Yield")+
+  ggtitle("2016")+theme_classic() + 
   theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
+
+ggplot(df16,aes(logdiff,logdiff.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(-4,1)+xlim(-4,1)+
+  xlab("Observed Log Difference in Yield")+ylab("Modelled Log Difference in Yield")+
+  ggtitle("2016")+theme_classic() +
+  theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
+
+p16.3<-ggplot(df16,aes(logdiff,logdiff.pred)) + geom_point() + geom_abline(slope=1,intercept=0,col='red') +
+  ylim(-4,1)+xlim(-4,1)+
+  xlab("Observed")+ylab("Predicted")+
+  ggtitle("Model Assessment")+theme_bw() +
+  theme(text = element_text(size = 12),legend.key = element_blank(),legend.position="bottom")
+p16.3
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.logylddiff.2016.norm.pdf"),width=6,height=6)
 
-#comparison of difference in Tmax (fruiting), elevation and difference in yield - deadend
-d.F.tmax <- d.F.new %>% filter(year==2014) %>% rename(tmax.flower.14=tmax.flower,tmax.fruit.14=tmax.fruit) %>% select(Plot,tmax.flower.14,tmax.fruit.14)
+#residuals vs fitted
+p16.1<-ggplot(dm16b, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
+  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
+  ggtitle("Residual vs Fitted Plot")+theme_bw()
 
-d.F.new<-left_join(d.F.new,d.F.tmax,by="Plot")
-d.F.new <- d.F.new %>% group_by(Plot,year) %>% mutate(tmax.flower.diff=tmax.flower-tmax.flower.14,tmax.fruit.diff=tmax.fruit-tmax.fruit.14,low.yield1=1) %>%
-  mutate(low.yield1=replace(low.yield1,low.yield<0.5,0))
+#qqplot
+p16.2 <- ggplot(dm16b, aes(qqnorm(.stdresid)[[1]], .stdresid))+geom_point(na.rm=T) +
+  geom_abline(aes(intercept=0,slope=1), col = 'red')+xlab("Theoretical Quantiles")+ylab("Standardized Residuals") +
+  ggtitle("Normal Q-Q")+theme_bw()
 
-ggplot(d.F.new,aes(elevation,tmax.fruit,group=year)) + geom_point() + facet_wrap(~year,ncol=3) + 
-  stat_smooth(method="lm") + theme_classic() + xlab("Elevation [m]") + ylab("Maximum Temperature (Fruiting) [C]")
-ggsave(paste0(getwd(),"/Analysis/ElNino/MaxTemp.Fruit.Elevation.pdf"),width=12,height=6)
+p16.4<-ggpubr::ggarrange(p16.1,p16.2,p16.3,ncol=2,nrow=2,labels="auto")
+
+p16<-ggpubr::ggarrange(p3,p16.4,ncol=2,nrow=1)
+p16
+ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yld2016.allgraphs.pdf"),width=12,height=6)
 
 #3D figure of patcharea area and elevation
 d.F.new<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
@@ -669,7 +791,8 @@ elev<-seq(as.integer(min(d.F.new.14$elevation)),as.integer(max(d.F.new.14$elevat
 patch<-seq(as.integer(min(d.F.new.14$patcharea)),as.integer(max(d.F.new.14$patcharea)),by=5)
 z.elev<-attributes(scale(d.F.new.14$elevation))
 z.patch<-attributes(scale(d.F.new.14$patcharea))
-tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.confint.csv"))
+
+tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_yld14.delta6.v2.confint.csv"))
 
 z.14<-data.frame()
 for(i in 1:length(elev)){
@@ -683,19 +806,20 @@ z.14$elevation<-elev
 
 z_g.14<-gather(z.14,key="patch",value="yld",-elevation)
 
-ggplot(z_g.14, aes( as.numeric(patch), elevation, z = yld)) +geom_raster(aes(fill=yld)) +
+g1<-ggplot(z_g.14, aes( as.numeric(patch), elevation, z = yld)) +geom_raster(aes(fill=yld)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
   scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Shrub Yield") + ggtitle("Interaction of Elevation and Patch Area for 2014") + theme(text=element_text(size=14))
+  labs(fill="Yield") + ggtitle("Shrub Yield\n(2014)") + theme(text=element_text(size=16))
+g1
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yld14.elev.vs.patcharea.pdf"),width=8,height=7)
 
 #for 2015
-tmp.15<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff15.delta6.confint.csv"))
+tmp.15<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.v2.confint.csv"))
+
 z.15<-data.frame()
 for(i in 1:length(elev)){
   for(j in 1:length(patch)){
-    z.15[i,j] <- tmp.15[tmp.15$Comparison=="rescale(elevation)","Estimate"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + tmp.15[tmp.15$Comparison=="rescale(patcharea)","Estimate"]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]]) +
-      tmp.15[tmp.15$Comparison=="rescale(elevation):rescale(patcharea)","Estimate"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]])*(patch[j]-z.patch[[2]])/(2*z.patch[[3]])
+    z.15[i,j] <- tmp.15[tmp.15$Comparison=="rescale(elevation)","Estimate"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + tmp.15[tmp.15$Comparison=="rescale(patcharea)","Estimate"]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]]) 
   }
 }
 colnames(z.15)<-patch
@@ -703,19 +827,19 @@ z.15$elevation<-elev
 
 z_g.15<-gather(z.15,key="patch",value="yld_diff",-elevation)
 
-ggplot(z_g.15, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
+g2<-ggplot(z_g.15, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Shrub Yield\nDifference") + ggtitle("Interaction of Elevation and Patch Area for 2015") + theme(text=element_text(size=14))
+  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield Difference\n(2015)") + theme(text=element_text(size=16))
+g2
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.ylddiff15.elev.vs.patcharea.pdf"),width=8,height=7)
 
 #for 2016
-tmp.16<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff16.delta6.confint.csv"))
+tmp.16<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff16.delta2.v2.confint.csv"))
 
 z.16<-data.frame()
 for(i in 1:length(elev)){
   for(j in 1:length(patch)){
-    z.16[i,j] <- tmp.16[tmp.16$Comparison=="rescale(elevation)","Estimate"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + tmp.16[tmp.16$Comparison=="rescale(patcharea)","Estimate"]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]]) +
-      tmp.16[tmp.16$Comparison=="rescale(elevation):rescale(patcharea)","Estimate"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]])*(patch[j]-z.patch[[2]])/(2*z.patch[[3]])
+    z.16[i,j] <- tmp.16[tmp.16$Comparison=="rescale(elevation)","Estimate"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + tmp.16[tmp.16$Comparison=="rescale(patcharea)","Estimate"]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]])
   }
 }
 colnames(z.16)<-patch
@@ -723,167 +847,76 @@ z.16$elevation<-elev
 
 z_g.16<-gather(z.16,key="patch",value="yld_diff",-elevation)
 
-ggplot(z_g.16, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
+g3<-ggplot(z_g.16, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
   scale_fill_viridis_c() + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Shrub Yield\nDifference") + ggtitle("Influence of Elevation and Patch Area for 2016") + theme(text=element_text(size=14))
+  labs(fill="Log Yield\nDifference") + ggtitle("Shrub Yield Difference\n(2016)") + theme(text=element_text(size=16))
+g3
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.ylddiff16.elev.vs.patcharea.pdf"),width=8,height=7)
 
-library(ggpubr)
-#explore link between coffee area and shrub yield
-g1<-ggplot(d.F.new ,aes(coffee.area.ha,pdiff.yld)) + geom_point(aes(color=factor(low.yield1))) + theme_classic() +
-  xlab("Coffee Area [ha]") + ylab("Difference in Yield [%]") + labs(color="Low Yielding Plot")
-g2<-ggplot(d.F.new ,aes(coffee.area.ha,diff.yld)) + geom_point(aes(color=factor(low.yield1))) + stat_smooth(method="lm") +
-  theme_classic() + xlab("Coffee Area [ha]") + ylab("Difference in Yield [kg]") + labs(color="Low Yielding Plot")
-g3<-ggplot(d.F.new,aes(coffee.area.ha,low.yield)) + geom_point(aes(color=factor(low.yield1))) + stat_smooth(method="lm") +
-  theme_classic() + xlab("Coffee Area [ha]") + ylab("Low Yielding Farm Score [0-1]") + labs(color="Low Yielding Plot")
+#yield model for basal area leguminous trees and shade diversity
+legume<-seq(as.integer(min(d.F.new15$BA.legume)),as.integer(max(d.F.new15$BA.legume)),by=0.30)
+diversity<-seq(as.integer(min(d.F.new15$Shannon.i)),as.integer(max(d.F.new15$Shannon.i)),by=0.04)
+z.legume<-attributes(scale(d.F.new15$BA.legume))
+z.diversity<-attributes(scale(d.F.new15$Shannon.i))
 
-ggarrange(g1,g2,g3,common.legend=T,ncol=3,nrow=1)
-ggsave(paste0(getwd(),"/Analysis/ES/Comparison.diffyld.pdifyld.coffeearea.pdf"),width=9,height=3)
-
-ggplot(d.F.new,aes(log(coffee.area.ha),Shrub.kg)) + geom_point(aes(color=factor(year))) + 
-  stat_smooth(method="lm",aes(group=year,color=factor(year)),se=F) + theme_classic() +
-  xlab("Log of Coffee Area [ha]") +ylab("Shrub Yield [kg]") + labs(color="Year")
-ggsave(paste0(getwd(),"/Analysis/ES/Comparison.shrubyld.coffeearea.pdf"),width=4,height=3)
-
-g1<-ggplot(d.F.new1 %>% filter(year==2015),aes(log(coffee.area.ha),GapDry))  + geom_point(aes(color=factor(low.yield1))) + 
-  stat_smooth(method="lm") + theme_classic() +
-  xlab("Log of Coffee Area [ha]") +ylab("Canopy Gap [%]") + labs(color="Low Yielding Plot")
-
-g2<-ggplot(d.F.new1 %>% filter(year==2015),aes(log(coffee.area.ha),std.kg))  + geom_point(aes(color=factor(low.yield1))) + 
-  stat_smooth(method="lm") + theme_classic() +
-  xlab("Log of Coffee Area [ha]") +ylab("Standard Dev of Yield [kg]") + labs(color="Low Yielding Plot")
-
-g3<-ggplot(d.F.new1 %>% filter(year==2015),aes(GapDry,std.kg))  + geom_point(aes(color=factor(low.yield1))) + 
-  stat_smooth(method="lm") + theme_classic() +
-  xlab("Canopy Gap [%]") +ylab("Standard Dev of Yield [kg]") + labs(color="Low Yielding Plot")
-ggarrange(g1,g2,g3,common.legend=T,ncol=3,nrow=1)
-ggsave(paste0(getwd(),"/Analysis/ES/Comparison.shrubsd.canopygap.coffeearea.pdf"),width=9,height=3)
-
-#find where low yielding and large farmers are located
-d.F.new<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset_wylddiff.csv"))
-d.F.new14<-d.F.new %>% filter(year==2014)
-d.F.new15<-d.F.new %>% filter(year==2015)
-d.F.new16<-d.F.new %>% filter(year==2016)
-
-#library(car)
-library(arm)
-pdf(paste0(getwd(),"/Analysis/ES/Plot.LowYield_norm.pdf"),width=8,height=8)
-car::qqp(d.F.new14$low.yield, "norm")
-dev.off()
-
-#see if elevation and patch area predict low yielding plots?
-tm<-lm(low.yield~rescale(patcharea)+rescale(elevation)+rescale(Shannon.i)+rescale(BA.legume),data=d.F.new14)
-xy<-summary(tm)
-
-elev<-seq(as.integer(min(d.F.new14$elevation)),as.integer(max(d.F.new14$elevation)),by=1)
-patch<-seq(as.integer(min(d.F.new14$patcharea)),as.integer(max(d.F.new14$patcharea)),by=5)
-z.elev<-attributes(scale(d.F.new14$elevation))
-z.patch<-attributes(scale(d.F.new14$patcharea))
-
-#for lowyield
-z.ly<-data.frame()
-for(i in 1:length(elev)){
-  for(j in 1:length(patch)){
-    z.ly[i,j] <- coef(xy)[1,1]+coef(xy)[3,1]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + coef(xy)[2,1]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]])
+#do for 2014 yields
+s.14<-data.frame()
+for(i in 1:length(legume)){
+  for(j in 1:length(diversity)){
+    s.14[i,j] <- tmp.14[tmp.14$Comparison=="rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.14[tmp.14$Comparison=="rescale(Shannon.i)","Estimate"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) +
+      tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
   }
 }
-colnames( z.ly)<-patch
-z.ly$elevation<-elev
+colnames(s.14)<-diversity
+s.14$legume<-legume
 
-z_g.ly<-gather(z.ly,key="patch",value="yld_diff",-elevation)
+s_g.14<-gather(s.14,key="diversity",value="yld",-legume)
 
-ggplot(z_g.ly, aes( as.numeric(patch), elevation, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
-  scale_fill_gradientn(colours = terrain.colors(20)) + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Probability") + ggtitle("Probability Farm Low Yielding (2014)") + theme(text=element_text(size=14))
-ggsave(paste0(getwd(),"/Analysis/ES/Modelled.lowyield.elev.vs.patcharea.pdf"),width=8,height=7)
+g4<-ggplot(s_g.14, aes( as.numeric(diversity), legume, z = yld)) +geom_raster(aes(fill=yld)) +
+  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  labs(fill="Yield") + ggtitle("") + theme(text=element_text(size=16))
 
+#do for 2015 yield difference
+s.15<-data.frame()
+for(i in 1:length(legume)){
+  for(j in 1:length(diversity)){
+    s.15[i,j] <- tmp.15[tmp.15$Comparison=="rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.15[tmp.15$Comparison=="rescale(Shannon.i)","Estimate"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) #+
+    #      tmp.15[tmp.15$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
+  }
+}
+colnames(s.15)<-diversity
+s.15$legume<-legume
 
+s_g.15<-gather(s.15,key="diversity",value="yld_diff",-legume)
 
-#for 2015&2016
-#topmodels.avg<-model.avg(cand.set) 
-#sink(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff.delta2.txt"))
-#summary(topmodels.avg)
-#sink() 
+g5<-ggplot(s_g.15, aes( as.numeric(diversity), legume, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
+  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  labs(fill="Log Yield\nDifference") + ggtitle("") + theme(text=element_text(size=16))
 
-#x1<-as.data.frame(summary(topmodels.avg)$importance)
-#x1$Comparison<-rownames(x1)
-#colnames(x1)<-c("Importance","Comparison")
+#do for 2016 yield difference
+s.16<-data.frame()
+for(i in 1:length(legume)){
+  for(j in 1:length(diversity)){
+    s.16[i,j] <- tmp.16[tmp.16$Comparison=="rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.16[tmp.16$Comparison=="rescale(Shannon.i)","Estimate"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) +
+      tmp.16[tmp.16$Comparison=="rescale(Shannon.i):rescale(BA.legume)","subset"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
+  }
+}
+colnames(s.16)<-diversity
+s.16$legume<-legume
 
-#calculate model average and confidence intervals
+s_g.16<-gather(s.16,key="diversity",value="yld_diff",-legume)
 
-#vars<-list()
-#for(i in 1:nrow(x1)){
-#  if(x1$Comparison[i]=="rescale(elevation):rescale(patcharea)") vars[[i]]<-data.frame(cbind(x1$Comparison[i],modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Mod.avg.beta,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Uncond.SE,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Lower.CL,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Upper.CL),stringsAsFactors = F)
-#  else if(x1$Comparison[i]=="rescale(elevation)"|x1$Comparison[i]=="rescale(patcharea)") vars[[i]]<-data.frame(cbind(x1$Comparison[i],modavg(cand.set,parm=x1$Comparison[i],uncond.se = "revised",modnames = Modnames,exclude=list("rescale(elevation):rescale(patcharea)"))$Mod.avg.beta,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames,exclude=list("rescale(elevation):rescale(patcharea)"))$Uncond.SE,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames,exclude=list("rescale(elevation):rescale(patcharea)"))$Lower.CL,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames,exclude=list("rescale(elevation):rescale(patcharea)"))$Upper.CL),stringsAsFactors = F)
-#  else vars[[i]]<-data.frame(cbind(x1$Comparison[i],modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Mod.avg.beta,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Uncond.SE,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Lower.CL,modavg(cand.set,x1$Comparison[i],uncond.se = "revised",modnames = Modnames)$Upper.CL),stringsAsFactors = F)
-#}
-#vars.1<-do.call(rbind.data.frame,vars)
-#colnames(vars.1)<-c("Parameter","Estimate","Uncond.SE","Lower.CL","Upper.CL")
-#vars.1[nrow(vars.1)+1,]<-data.frame(cbind("(Intercept)",modavg(cand.set,"(Intercept)",uncond.se = "revised",modnames = Modnames)$Mod.avg.beta,modavg(cand.set,"(Intercept)",uncond.se = "revised",modnames = Modnames)$Uncond.SE,modavg(cand.set,"(Intercept)",uncond.se = "revised",modnames = Modnames)$Lower.CL,modavg(cand.set,"(Intercept)",uncond.se = "revised",modnames = Modnames)$Upper.CL),stringsAsFactors = F)
+g6<-ggplot(s_g.16, aes( as.numeric(diversity), legume, z = yld_diff)) +geom_raster(aes(fill=yld_diff)) +
+  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  labs(fill="Log Yield\nDifference") + ggtitle("") + theme(text=element_text(size=16))
 
-#vars.1[,2:5]<-sapply(vars.1[,2:5],as.numeric)
+#yields
+c1<-ggpubr::ggarrange(g1,g4,ncol=1,nrow=2,common.legend = T,legend="right",font.label = list(size = 18),heights=c(1.1,1))
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/Coffee_ES/Model.yield.elev.patcharea.pdf",height=7,width=4)
 
-#create figure of coefficients with confidence intervals
-#tmp<-as.data.frame(t(topmodels.avg[[2]]))
-#tmp$Comparison <- rownames(tmp)
-#tmp[,4:7]<-vars.1[match(tmp$Comparison,vars.1$Parameter),2:5]
+#yield differences
+c2<-ggpubr::ggarrange(g2,g3,g5,g6,ncol=2,nrow=2,common.legend = T,legend="right",font.label = list(size = 18),heights=c(1.1,1),widths=c(1.05,1))
 
-#add importance
-#tmp$Importance<-x1[match(tmp$Comparison,x1$Comparison),"Importance"]
-#write.csv(tmp,paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff.delta2.confint.csv"))
+ggpubr::ggarrange(c1,c2,nrow=1,ncol=2,align="hv",widths=c(1.05,2))
 
-#tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff.delta2.confint.csv"))
-#tmp<-tmp[!is.na(tmp$full),]
-
-#for delta 2
-#tmp$Comparison<-factor(tmp$Comparison,levels=tmp[order(tmp$Importance,decreasing=F),"Comparison"],
-#                       labels=c("Shade Diversity","Elevation:Patch Area","Basal Area of\nLeguminous Trees","Coffee Land Area","Low Yielding Plot","Elevation","Patch Area","(Intercept)"))
-
-#order by importance
-#tmp<-tmp[!is.na(tmp$Importance),]
-
-#g1<-ggplot(tmp, aes(x = Comparison, y = Estimate, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2) + geom_point()+
-#  theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence of ES factors on Yield\nDifference Per Shrub")+
-#  xlab("Variable [ranked by importance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-#  theme(text = element_text(size = 14)
-#    ,axis.text.x=element_text(angle = 45,hjust=1))
-#g1+coord_flip()
-#ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_results_ylddiff.pdf"),height=6,width=6)
-
-#test validity of the model
-tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_ylddiff.delta6.confint.csv"))
-
-d.F.new1$z.coffee.area.ha=rescale(d.F.new1$coffee.area.ha)
-d.F.new1$z.Shannon.i=rescale(d.F.new1$Shannon.i)
-d.F.new1$z.BA.legume=rescale(d.F.new1$BA.legume)
-d.F.new1$z.low.yield=rescale(d.F.new1$low.yield)
-d.F.new1$z.elevation=rescale(d.F.new1$elevation)
-d.F.new1$z.patcharea=rescale(d.F.new1$patcharea)
-
-df<-d.F.new1 %>% group_by(Plot,year) %>% mutate(diff.yld.mod=tmp[tmp$Comparison=="(Intercept)","Estimate"]+tmp[tmp$Comparison=="rescale(coffee.area.ha)","Estimate"]*z.coffee.area.ha+tmp[tmp$Comparison=="rescale(Shannon.i)","Estimate"]*z.Shannon.i+tmp[tmp$Comparison=="rescale(low.yield)","Estimate"]*z.low.yield+
-                                                  tmp[tmp$Comparison=="rescale(elevation)","Estimate"]*z.elevation + tmp[tmp$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea + tmp[tmp$Comparison=="rescale(BA.legume)","Estimate"]*z.BA.legume+
-                                                  tmp[tmp$Comparison=="rescale(elevation):rescale(patcharea)","Estimate"]*z.elevation*z.patcharea,low.yield1=1) %>% mutate(low.yield1=replace(low.yield1,low.yield<0.5,0))
-
-ggplot(df,aes(diff.yld,diff.yld.mod)) + geom_point(aes(color=factor(low.yield1),shape=factor(year))) + geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(-0.6,0.5)+xlim(-0.6,0.5)+
-  xlab("Observed Difference in Yield [kg]")+ylab("Modelled Difference in Yield [kg]")+
-  ggtitle("2015 & 2016")+theme_classic() + labs(shape="Year",color="Low Yielding Plot")+
-  theme(text = element_text(size = 14),legend.key = element_blank(),legend.position="bottom")
-ggsave(paste0(getwd(),"/Analysis/ES/Modelled.ylddiff.201516.norm.pdf"),width=6,height=6)
-
-
-z14<-as.matrix(z)
-x <-patch
-y <-elev
-
-yld_diff<-plot_ly() %>% 
-  add_surface(z=~z1,x=patch,y=elev,type="surface",colorbar=list(title='Shrub Yield Difference')) %>%
-  layout(scene=list(
-    xaxis=list(title='Patch Size (ha)'),
-    yaxis=list(title='Elevation (m)'),
-    zaxis=list(title='')))
-
-source("/users/Alex/Documents/Research/Africa/ECOLIMITS/Codes/CoffeeES.analysis/plotly_profile.R")
-plotly_IMAGE(yld_diff, format = "png", out_file = paste0(getwd(),"/Analysis/ES/Ylddiff_elevation.patcharea.png"))
-#if (!require("processx")) install.packages("processx")
-orca(yld_diff, file = paste0(getwd(),"/Analysis/ES/Ylddiff_elevation.patcharea.png"))
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/Model.yield.diffyld.elev.patcharea.pdf",height=7,width=12)
