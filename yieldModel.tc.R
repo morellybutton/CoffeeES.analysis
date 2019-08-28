@@ -655,7 +655,7 @@ df<-d.F.new.14 %>% group_by(Plot) %>%
            tmp.14[tmp.14$Comparison=="rescale(patcharea)","Estimate"]*z.patcharea +
            tmp.14[tmp.14$Comparison=="rescale(GapDry)","Estimate"]*z.GapDry +
            tmp.14[tmp.14$Comparison=="rescale(tmax.anom.fruit)","Estimate"]*z.tmax.anom.fruit +
-           tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*z.BA.legume*z.Shannon.i)
+           tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","Estimate"]*z.BA.legume*z.Shannon.i)
 
 ggplot(df,aes(Shrub.kg.pred,Shrub.kg.mod)) + geom_point() + geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+
@@ -897,7 +897,7 @@ s.14<-data.frame()
 for(i in 1:length(legume)){
   for(j in 1:length(diversity)){
     s.14[i,j] <- tmp.14[tmp.14$Comparison=="rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.14[tmp.14$Comparison=="rescale(Shannon.i)","Estimate"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) +
-      tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
+      tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
   }
 }
 colnames(s.14)<-diversity
@@ -914,7 +914,7 @@ s.15<-data.frame()
 for(i in 1:length(legume)){
   for(j in 1:length(diversity)){
     s.15[i,j] <- tmp.15[tmp.15$Comparison=="rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.15[tmp.15$Comparison=="rescale(Shannon.i)","Estimate"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) #+
-    #      tmp.15[tmp.15$Comparison=="rescale(BA.legume):rescale(Shannon.i)","subset"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
+    #      tmp.15[tmp.15$Comparison=="rescale(BA.legume):rescale(Shannon.i)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
   }
 }
 colnames(s.15)<-diversity
@@ -931,7 +931,7 @@ s.16<-data.frame()
 for(i in 1:length(legume)){
   for(j in 1:length(diversity)){
     s.16[i,j] <- tmp.16[tmp.16$Comparison=="rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.16[tmp.16$Comparison=="rescale(Shannon.i)","Estimate"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) +
-      tmp.16[tmp.16$Comparison=="rescale(Shannon.i):rescale(BA.legume)","subset"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
+      tmp.16[tmp.16$Comparison=="rescale(Shannon.i):rescale(BA.legume)","Estimate"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
   }
 }
 colnames(s.16)<-diversity
