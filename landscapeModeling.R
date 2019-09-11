@@ -355,7 +355,7 @@ ggpubr::annotate_figure(figure,
                 fig.lab = "Normal Year", fig.lab.face = "bold", fig.lab.size = 20
 )
 
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/SuppFig_ModelledvsMeasuredYield.NormalYear.pdf",height=9,width=12)
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/SuppFig_ModelledvsMeasuredYield.NormalYear.pdf",height=9,width=12)
 
 
 #calculate logdiff for "normal", "hot" and "dry" years
@@ -811,13 +811,13 @@ df.pa.min.normb.3<-df.pa.min.normb.3 %>% group_by(Plot) %>%
            tmp.14[tmp.14$Comparison=="rescale(GapDry)","Estimate"]*GapDry +
            tmp.14[tmp.14$Comparison=="rescale(tmax.anom.fruit)","Estimate"]*tmax.anom.fruit +
            tmp.14[tmp.14$Comparison=="rescale(BA.legume):rescale(Shannon.i)","Estimate"]*BA.legume*Shannon.i) %>% 
-  mutate(Shrub.kg.mod=replace(Shrub.kg.mod,Shrub.kg.mod<0,0.001))
+  mutate(Shrub.kg.mod2=replace(Shrub.kg.mod,Shrub.kg.mod<0,0.001))
 
 
 df.pa.min.normb.3<-left_join(df.pa.min.normb.3,d.F.new.14 %>% dplyr::select(Plot,elevation), by="Plot") %>%
   rename(elevation=elevation.y)
 
-df.pa.min.normb.3 <- df.pa.min.normb.3 %>% group_by(Plot) %>% mutate(logdiff=log(Shrub.kg.mod/Shrub.kg)) %>% ungroup()
+df.pa.min.normb.3 <- df.pa.min.normb.3 %>% group_by(Plot) %>% mutate(logdiff=log(Shrub.kg.mod2/Shrub.kg)) %>% ungroup()
 
 df.pa.min.hot.3<-df.pa.min.hot %>% dplyr::select(-`rescale(Shannon.i)`,-`rescale(BA.legume)`) %>% 
   rename(Shannon.i=max.Shannon.i,BA.legume=max.BA.legume,coffee.area.ha=`rescale(coffee.area.ha)`,propCBD=`rescale(propCBD)`) %>% 
@@ -871,7 +871,7 @@ ggpubr::annotate_figure(figure2,
                         fig.lab = "Minimize Shock Losses", fig.lab.face = "bold", fig.lab.size = 20
 )
 
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ModelledvsMeasuredYield.MinShockLosses.pdf",height=9,width=12)
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ModelledvsMeasuredYield.MinShockLosses.pdf",height=9,width=12)
 
 #do figure with BA.legume and Shade diversity going in opposite directions and leave out mean values
 #max patch area, min BA.legume and max Shade diversity
@@ -1144,4 +1144,151 @@ ggpubr::annotate_figure(figure3,
                         fig.lab = "Maximise Yields", fig.lab.face = "bold", fig.lab.size = 20
 )
 
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ModelledvsMeasuredYield.MaxYields.pdf",height=9,width=9.5)
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ModelledvsMeasuredYield.MaxYields.pdf",height=9,width=9.5)
+
+#combination of three options (max yield, min losses, min shock losses)
+kombo7 <- ggplot(df.pa.max.norm.1,aes(logdiff)) + geom_freqpoly(binwidth=0.5, aes(color="Normal Year"),size=1) + theme_classic() + 
+  xlab("Log Difference in Yield") +
+  geom_freqpoly(data=df.pa.max.hotb.1,aes(logdiff.mod,color="Hot Year"),binwidth=0.5,size=1) + 
+  geom_freqpoly(data=df.pa.max.dryb.1,aes(logdiff.mod,color="Dry Year"),binwidth=0.5,size=1) +
+  geom_vline(xintercept=0,linetype="dashed") +
+  theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + xlim(-8,5) +
+  scale_color_viridis_d(begin=0.8,end=0) + annotate("text",x=-6,y=25,label="Max Patch Area",size=5) + ggtitle("Maximise Yields (Normal Year)") +
+  annotate("text",x=-5.65,y=23.5,label="Min Shade Diversity",size=5) + annotate("text",x=-4.95,y=22,label="Max BA Leguminous Trees",size=5) 
+kombo8 <- ggplot(df.pa.min.norm.2,aes(logdiff)) + geom_freqpoly(binwidth=0.5, aes(color="Normal Year"),size=1) + theme_classic() + 
+  xlab("Log Difference in Yield") +
+  geom_freqpoly(data=df.pa.min.hot.2,aes(logdiff.mod,color="Hot Year"),binwidth=0.5,size=1) + 
+  geom_freqpoly(data=df.pa.min.dry.2,aes(logdiff.mod,color="Dry Year"),binwidth=0.5,size=1) +
+  geom_vline(xintercept=0,linetype="dashed") +
+  theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + xlim(-8,5) +
+  scale_color_viridis_d(begin=0.8,end=0) + annotate("text",x=-6.25,y=25,label="Min Patch Area",size=5) + ggtitle("Minimise Variability (All Years)") +
+  annotate("text",x=-5.60,y=23.5,label="Mean Shade Diversity",size=5) + annotate("text",x=-4.95,y=22,label="Mean BA Leguminous Trees",size=5)
+kombo9 <- ggplot(df.pa.min.normb.3,aes(logdiff)) + geom_freqpoly(binwidth=0.5, aes(color="Normal Year"),size=1) + theme_classic() + 
+  xlab("Log Difference in Yield") +
+  geom_freqpoly(data=df.pa.min.hot.3,aes(logdiff.mod,color="Hot Year"),binwidth=0.5,size=1) + 
+  geom_freqpoly(data=df.pa.min.dry.3,aes(logdiff.mod,color="Dry Year"),binwidth=0.5,size=1) +
+  geom_vline(xintercept=0,linetype="dashed") +
+  theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + xlim(-8,5) +
+  scale_color_viridis_d(begin=0.8,end=0) + annotate("text",x=-6.1,y=25,label="Min Patch Area",size=5) + ggtitle("Minimise Losses (Shock Years)*") +
+  annotate("text",x=-5.60,y=23.5,label="Max Shade Diversity",size=5) + annotate("text",x=-4.95,y=22,label="Max BA Leguminous Trees",size=5)
+
+ggpubr::ggarrange(kombo7, kombo8, kombo9,labels = "AUTO",ncol=3,nrow=1,common.legend=T)
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ContrastDifferentStrategies.pdf",height=5,width=16.5)
+
+
+#calculate actual yields using (base year yield)*e^(logdiff) to get shock year yields.
+#for maximising yields in normal year (max patch area, min shade diversity and max BA.legume)
+#get mean coffee density and farm size
+m_density<-d.F.new.14 %>% summarise(density=median(density,na.rm=T))
+  
+df.pa.max.hotb.1 <- df.pa.max.hotb.1 %>% group_by(Plot) %>% mutate(Shrub.kg.mod=Shrub.kg*exp(logdiff.mod)) %>% 
+  mutate(yld.kg=Shrub.kg.mod*m_density$density)
+  
+df.pa.max.dryb.1 <- df.pa.max.dryb.1 %>% group_by(Plot) %>% mutate(Shrub.kg.mod=Shrub.kg*exp(logdiff.mod)) %>% 
+  mutate(yld.kg=Shrub.kg.mod*m_density$density)
+
+acnorm1<-ggplot(df.pa.max.norm.1,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + scale_color_viridis_c() +
+  theme_classic() +  xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + xlim(0,1) + ylim(0,2) +
+  annotate("text",label="Normal Year",x=0.2,y=1.9,size=6) + geom_abline(slope=2,intercept=0,linetype="dashed") +
+  annotate("text",label="slope = 2",angle=45,x=0.25,y=0.6)
+
+acnorm2<-  ggplot() + geom_point(data=df.pa.max.hotb.1,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + scale_color_viridis_c() +
+  theme_classic() +  xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + xlim(0,1) + ylim(0,0.2) +
+  annotate("text",label="Hot Year",x=0.15,y=0.19,size=6) + geom_abline(slope=0.1,intercept=0,linetype="dashed") +
+  annotate("text",label="slope = 0.1",angle=25,x=0.75,y=0.085)
+
+acnorm3<- ggplot() + geom_point(data=df.pa.max.dryb.1,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) +
+  scale_color_viridis_c() + theme_classic() +  xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + xlim(0,1) + ylim(0,0.2) +
+  annotate("text",label="Dry Year",x=0.15,y=0.19,size=6) + geom_abline(slope=0.2,intercept=0,linetype="dashed") +
+  annotate("text",label="slope = 0.2",angle=45,x=0.5,y=0.11)
+
+acnorm<-ggpubr::ggarrange(acnorm1, acnorm2, acnorm3,ncol=3,nrow=1,common.legend=T,legend="right")
+
+ac.norm<-ggpubr::annotate_figure(acnorm,
+                        fig.lab = "Maximise Yields", fig.lab.face = "bold", fig.lab.size = 20
+)
+
+#for minimising variability in yields (min patch area, mean shade diversity and mean BA.legume)
+df.pa.min.hot.2 <- df.pa.min.hot.2 %>% group_by(Plot) %>% mutate(Shrub.kg.mod=Shrub.kg*exp(logdiff.mod)) %>% 
+  mutate(yld.kg=Shrub.kg.mod*m_density$density)
+df.pa.min.dry.2 <- df.pa.min.dry.2 %>% group_by(Plot) %>% mutate(Shrub.kg.mod=Shrub.kg*exp(logdiff.mod)) %>% 
+  mutate(yld.kg=Shrub.kg.mod*m_density$density)
+
+minvar1<-ggplot(df.pa.min.norm.2,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + xlim(0,1) + ylim(0,1) + scale_color_viridis_c() +
+  theme_classic() + xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  annotate("text",label="Normal Year",x=0.2,y=0.9,size=6) + annotate("text",label="slope = 1",angle=45,x=0.75,y=0.8)
+
+minvar2<-ggplot(df.pa.min.hot.2,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + xlim(0,1) + ylim(0,1) + scale_color_viridis_c() +
+  theme_classic() + xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  annotate("text",label="Hot Year",x=0.15,y=0.9,size=6) + annotate("text",label="slope = 1",angle=45,x=0.5,y=0.55)
+
+minvar3<-ggplot(df.pa.min.dry.2,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + xlim(0,1) + ylim(0,1) + scale_color_viridis_c() +
+  theme_classic() + xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + geom_abline(slope=1,intercept=0,linetype="dashed") +
+  annotate("text",label="Dry Year",x=0.15,y=0.9,size=6) + annotate("text",label="slope = 1",angle=45,x=0.5,y=0.55)
+
+minvar<-ggpubr::ggarrange(minvar1, minvar2, minvar3,ncol=3,nrow=1,common.legend=T,legend="right")
+min.var<-ggpubr::annotate_figure(minvar,
+                                 fig.lab = "Minimise Variability", fig.lab.face = "bold", fig.lab.size = 20
+)
+
+#Minimise shock losses (min patch, max BA.legume, max shade diversity)
+df.pa.min.hot.3 <- df.pa.min.hot.3 %>% group_by(Plot) %>% mutate(Shrub.kg.mod=Shrub.kg*exp(logdiff.mod)) %>% 
+  mutate(yld.kg=Shrub.kg.mod*m_density$density)
+df.pa.min.dry.3 <- df.pa.min.dry.3 %>% group_by(Plot) %>% mutate(Shrub.kg.mod=Shrub.kg*exp(logdiff.mod)) %>% 
+  mutate(yld.kg=Shrub.kg.mod*m_density$density)
+
+minlos1<-ggplot(df.pa.min.normb.3,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + xlim(0,1) + ylim(-0.5,1) + scale_color_viridis_c() +
+  theme_classic() + xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + geom_hline(yintercept=0,linetype="dotted") +
+  annotate("text",label="Normal Year",x=0.2,y=0.9,size=6) + annotate("text",label="y = 0", x=0.1,y=0.1)
+
+minlos2<-ggplot(df.pa.min.hot.3,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + xlim(0,1) + ylim(0,2) + scale_color_viridis_c() +
+  theme_classic() + xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + geom_abline(slope=2,intercept=0,linetype="dashed") +
+  annotate("text",label="Hot Year",x=0.15,y=1.9,size=6) + annotate("text",label="slope = 2",angle=45,x=0.5,y=1.1)
+
+minlos3<-ggplot(df.pa.min.dry.3,aes(Shrub.kg,Shrub.kg.mod,color=elevation)) + geom_point() + xlim(0,1) + ylim(0,6) + scale_color_viridis_c() +
+  theme_classic() + xlab("Base Yield [kg/shrub]") + ylab("Modelled Yield [kg/shrub]") + geom_abline(slope=6,intercept=0,linetype="dashed") +
+  annotate("text",label="Dry Year",x=0.15,y=5.9,size=6)  + annotate("text",label="slope = 6",angle=45,x=0.5,y=3.4)
+
+minlos<-ggpubr::ggarrange(minlos1, minlos2, minlos3,ncol=3,nrow=1,common.legend=T,legend="right")
+min.los<-ggpubr::annotate_figure(minlos,
+                                 fig.lab = "Minimise Shock Losses", fig.lab.face = "bold", fig.lab.size = 20
+)
+
+ggpubr::ggarrange(ac.norm,min.var,min.los,common.legend=T,ncol=1,nrow=3,legend="right")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ContrastDifferentStrategies.Yields.pdf",height=12,width=12)
+
+#combination of three options (max yield, min losses, min shock losses)
+#redo this figure but with actual yields instead
+df.pa.max.norm.1<-df.pa.max.norm.1 %>% mutate(yld.kg=Shrub.kg.mod*m_density$density)
+kombo10 <- ggplot(df.pa.max.norm.1,aes(yld.kg)) + geom_freqpoly(binwidth=50, aes(color="Normal Year"),size=1) + theme_classic() + 
+  xlab("Farm Yield [kg/ha]") +
+  geom_freqpoly(data=df.pa.max.hotb.1,aes(yld.kg,color="Hot Year"),binwidth=50,size=1) + 
+  geom_freqpoly(data=df.pa.max.dryb.1,aes(yld.kg,color="Dry Year"),binwidth=50,size=1) +
+  #geom_vline(xintercept=0,linetype="dashed") +
+  theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + #xlim(-8,5) +
+  scale_color_viridis_d(begin=0.8,end=0) + annotate("text",x=500,y=40,label="Max Patch Area",size=5) + ggtitle("Maximise Yields (Normal Year)") +
+  annotate("text",x=500,y=37.5,label="Min Shade Diversity",size=5) + annotate("text",x=450,y=35,label="Max BA Leguminous Trees",size=5) 
+
+df.pa.min.norm.2 <- df.pa.min.norm.2 %>% mutate(yld.kg=Shrub.kg.mod*m_density$density)
+kombo11 <- ggplot(df.pa.min.norm.2,aes(yld.kg)) + geom_freqpoly(binwidth=50, aes(color="Normal Year"),size=1) + theme_classic() + 
+  xlab("Farm Yield [kg/ha]") +
+  geom_freqpoly(data=df.pa.min.hot.2,aes(yld.kg,color="Hot Year"),binwidth=50,size=1) + 
+  geom_freqpoly(data=df.pa.min.dry.2,aes(yld.kg,color="Dry Year"),binwidth=50,size=1) +
+  #geom_vline(xintercept=0,linetype="dashed") +
+  theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + #xlim(-8,5) +
+  scale_color_viridis_d(begin=0.8,end=0) + annotate("text",x=200,y=38,label="Min Patch Area",size=5) + ggtitle("Minimise Variability (All Years)") +
+  annotate("text",x=200,y=35.5,label="Mean Shade Diversity",size=5) + annotate("text",x=200,y=33,label="Mean BA Leguminous Trees",size=5)
+
+df.pa.min.normb.3 <- df.pa.min.normb.3 %>% mutate(yld.kg=Shrub.kg.mod2*m_density$density)
+kombo12 <- ggplot(df.pa.min.normb.3,aes(yld.kg)) + geom_freqpoly(binwidth=0.5, aes(color="Normal Year"),size=1) + theme_classic() + 
+  xlab("Farm Yield [kg/ha]") +
+  geom_freqpoly(data=df.pa.min.hot.3,aes(yld.kg,color="Hot Year"),binwidth=75,size=1) + 
+  geom_freqpoly(data=df.pa.min.dry.3,aes(yld.kg,color="Dry Year"),binwidth=75,size=1) +
+  #geom_vline(xintercept=0,linetype="dashed") +
+  theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + #xlim(-0.5,4000) +
+  scale_color_viridis_d(begin=0.8,end=0) + annotate("text",x=2000,y=50,label="Min Patch Area",size=5) + ggtitle("Minimise Losses (Shock Years)*") +
+  annotate("text",x=2000,y=47,label="Max Shade Diversity",size=5) + annotate("text",x=2000,y=44,label="Max BA Leguminous Trees",size=5)
+
+ggpubr::ggarrange(kombo10, kombo11, kombo12,labels = "AUTO",ncol=3,nrow=1,common.legend=T)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ContrastDifferentStrategies.farmyields.pdf",height=5,width=16.5)
+
