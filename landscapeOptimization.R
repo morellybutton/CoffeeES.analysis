@@ -63,7 +63,7 @@ z_combo$x<-as.numeric(str_split_fixed(z_combo$index,"X",2)[,2])
 g1<-ggplot(z_combo, aes( x,y, z = elevation)) +geom_raster(aes(fill=elevation)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
   scale_fill_viridis_c()+ theme_classic() +
-  labs(fill="Elevation (m)") + ggtitle("Theoretical Landscape (10 x 10 grid)") + 
+  labs(fill="Elevation (m)") + ggtitle("Theoretical Landscape\n(10 x 10 grid)") + 
   theme(text=element_text(size=16),legend.position="top")
 
 #show elevational climb
@@ -73,6 +73,7 @@ g2<-ggplot(y_combo,aes(m_elev,y)) + geom_line() + theme_classic() + xlab("Elevat
                    text=element_text(size=16)) + ggtitle("Profile of Landscape")
 
 ggpubr::ggarrange(g1,g2,ncol=2,nrow=1,align="hv",common.legend=T,legend="right")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TheoreticalLandscape.pdf",height=5,width=11)
 
 #calculate rescaled values
 elev.rescale<-d.F.new %>% filter(year==2014)  %>% mutate(elev.rescale=arm::rescale(elevation),mean=mean(elevation,na.rm=T),sd=sd(elevation,na.rm=T)) %>% 
@@ -81,13 +82,6 @@ elev.rescale<-d.F.new %>% filter(year==2014)  %>% mutate(elev.rescale=arm::resca
 elev.vals<-elev.rescale %>% select(mean,sd) %>% summarise_all("mean")
 
 z_combo <- z_combo %>% mutate(elev.rescale=(elevation-elev.vals$mean)/2/elev.vals$sd)
-#equation for normal year
-int14 <-tmp.14 %>% filter(X=="(Intercept)") %>% select(Estimate) %>% as.numeric()
-shan.i <- tmp.14 %>% filter(X=="rescale(Shannon.i)") %>% select(Estimate) %>% as.numeric()
-ba.l <- tmp.14 %>% filter(X=="rescale(BA.legume)") %>% select(Estimate) %>% as.numeric()
-int.sb <- tmp.14 %>% filter(X=="rescale(BA.legume):rescale(Shannon.i)") %>% select(Estimate) %>% as.numeric()
-p.tch <- tmp.14 %>% filter(X=="rescale(patcharea)") %>% select(Estimate) %>% as.numeric()
-elev <- tmp.14 %>% filter(X=="rescale(elevation)") %>% select(Estimate) %>% as.numeric()
 
 betas <- d.F.new %>% filter(year==2014) %>% mutate(shannon.i=arm::rescale(Shannon.i),ba.legume=arm::rescale(BA.legume),
                                                    patch=arm::rescale(patcharea)) %>% 
@@ -101,14 +95,86 @@ patch.vals<-d.F.new %>% filter(year==2014) %>% summarise(mean=mean(patcharea,na.
 max.ba <- betas %>% pull(ba.legume_max) 
 m_density<-d.F.new %>% filter(year==2014)  %>% summarise(density=median(density,na.rm=T)) %>% pull(density)
 
+#though how does density vary by elevation?
+summary(lm(density~elevation,data=d.F.new %>% filter(year==2014)))
+ggplot(d.F.new %>% filter(year==2014) ,aes(elevation,density) ) + geom_point() + stat_smooth(method="lm") + theme_classic() +
+  geom_hline(yintercept=m_density,linetype="dashed",color="grey") + theme(text=element_text(size=16)) +
+  xlab("Elevation [m]") + ylab("Coffee Density [shrubs/ha]") + ggtitle("Variation in Coffee Shrub Density")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/DensityvsElevation.pdf",height=4,width=5)
+
+#take mean density per elevation tranch (<y_combo[4] = 1, >y_combo[3]&<y_combo[8] = 2, >y_combo[8] = 3)
+c_density <- d.F.new %>% filter(year==2014) %>% select(elevation,density) %>% 
+  mutate(elev.group=2) %>% mutate(elev.group=replace(elev.group,elevation<=as.numeric(y_combo[4,2]),1),
+                                  elev.group=replace(elev.group,elevation>as.numeric(y_combo[8,2]),3)) %>% 
+  group_by(elev.group) %>% summarise(m_density=median(density,na.rm=T))
+
+#equation for normal year
+int14 <-tmp.14 %>% filter(X=="(Intercept)") %>% select(Estimate) %>% as.numeric()
+shan.i14 <- tmp.14 %>% filter(X=="rescale(Shannon.i)") %>% select(Estimate) %>% as.numeric()
+ba.l14 <- tmp.14 %>% filter(X=="rescale(BA.legume)") %>% select(Estimate) %>% as.numeric()
+int.sb14 <- tmp.14 %>% filter(X=="rescale(BA.legume):rescale(Shannon.i)") %>% select(Estimate) %>% as.numeric()
+p.tch14 <- tmp.14 %>% filter(X=="rescale(patcharea)") %>% select(Estimate) %>% as.numeric()
+elev14 <- tmp.14 %>% filter(X=="rescale(elevation)") %>% select(Estimate) %>% as.numeric()
+
 yld_norm <- function(x) {
-  x1 <- x[1]
-  x2 <- x[2]
-  x3 <- x[3]
-  (int14 + elev*x1 + shan.i*x2 + ba.l*max.ba + int.sb*max.ba*x2 + p.tch*x3)*m_density
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3
 }  
-   
-#where x1=elevation, x2=diversity and x3=patcharea
+
+#equation for hot year
+int15 <-tmp.15 %>% filter(X=="(Intercept)") %>% select(Estimate) %>% as.numeric()
+shan.i15 <- tmp.15 %>% filter(X=="rescale(Shannon.i)") %>% select(Estimate) %>% as.numeric()
+ba.l15 <- tmp.15 %>% filter(X=="rescale(BA.legume)") %>% select(Estimate) %>% as.numeric()
+p.tch15 <- tmp.15 %>% filter(X=="rescale(patcharea)") %>% select(Estimate) %>% as.numeric()
+
+yld_hot <- function(x){
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int15 + shan.i15*x2 + ba.l15*max.ba +  p.tch15*x3)
+}
+
+#equation to minimize variability from normal to hot year
+var_hot<-function(x){
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3 - ((int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int15 + shan.i15*x2 + ba.l15*max.ba +  p.tch15*x3))
+}
+
+#equation for dry year
+int16 <- tmp.16 %>% filter(Comparison=="(Intercept)") %>% select(Estimate) %>% as.numeric()
+shan.i16 <- tmp.16 %>% filter(Comparison=="rescale(Shannon.i)") %>% select(Estimate) %>% as.numeric()
+ba.l16 <- tmp.16 %>% filter(Comparison=="rescale(BA.legume)") %>% select(Estimate) %>% as.numeric()
+int.sb16 <- tmp.16 %>% filter(Comparison=="rescale(Shannon.i):rescale(BA.legume)") %>% select(Estimate) %>% as.numeric()
+elev16 <- tmp.16 %>% filter(Comparison=="rescale(elevation)") %>% select(Estimate) %>% as.numeric()
+
+yld_dry <- function(x) {
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int16 + elev16*x1 + shan.i16*x2 + ba.l16*max.ba + int.sb16*max.ba*x2) 
+}
+
+#equation to minimize variability from normal to dry year
+var_dry<-function(x){
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3 - ((int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int16 + elev16*x1 + shan.i16*x2 + ba.l16*max.ba + int.sb16*max.ba*x2))
+}
+
+#equation to minimize variability between all years (take mean of difference between normal and shock years)
+var_min <-function(x){
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  0.5*sum(int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3 - ((int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int16 + elev16*x1 + shan.i16*x2 + ba.l16*max.ba + int.sb16*max.ba*x2)),
+          int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3 - ((int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int15 + shan.i15*x2 + ba.l15*max.ba +  p.tch15*x3)) )
+}
+
 betas.sh <- seq(to=betas %>% select(shannon.i_max) %>% as.numeric(),
                 from=betas %>% select(shannon.i_min) %>% as.numeric(),
                 by=(betas %>% select(shannon.i_max) %>% as.numeric()-betas %>% select(shannon.i_min) %>% as.numeric())/10)
@@ -131,4 +197,84 @@ max.yld <- f1_1 %>% filter(yld==max(yld)) %>% rename(z.elevation=betas.elev,z.di
          diversity=z.diversity*2*div.vals$sd+div.vals$mean,
          patcharea=z.patcharea*2*patch.vals$sd+patch.vals$mean,x=1,y=1)
 
+results_max<-tibble()
+results_var<-tibble()
+c.dens<-m_density
+for(i in 1:10){
+  for(j in 1:10) {
+    #identify elevation group/density
+    elevation<-z_combo %>% filter(y==j&x==i) %>% pull(elevation)
+    if(elevation>y_combo[8,2]) {
+      elev.g=3 } else if(elevation<=y_combo[4,2]) {
+        elev.g=1} else {
+          elev.g=2}
+    #c.dens<-c_density %>% filter(elev.group==elev.g) %>% pull(m_density)
+    
+    betas.elev<-z_combo %>% filter(y==j&x==i) %>% pull(elev.rescale)
+       
+    yld<-apply(cbind(betas.elev,betas.sh1,betas.pt1), 1, yld_norm)
+    
+    output<-tibble(yld,betas.elev,betas.sh1,betas.pt1)
+    #extract conditions for maximum value 
+    max.yld <- output %>% filter(yld==max(yld)) %>% rename(z.elevation=betas.elev,z.diversity=betas.sh1,z.patcharea=betas.pt1) %>% 
+      mutate(yld.ha=yld*c.dens,
+             elevation=z.elevation*2*elev.vals$sd+elev.vals$mean,
+             diversity=z.diversity*2*div.vals$sd+div.vals$mean,
+             patcharea=z.patcharea*2*patch.vals$sd+patch.vals$mean,x=i,y=j)
+    max.yld$yld.hot<-yld_hot(cbind(max.yld$z.elevation,max.yld$z.diversity,max.yld$z.patcharea))
+    max.yld$yld.dry<-yld_dry(cbind(max.yld$z.elevation,max.yld$z.diversity,max.yld$z.patcharea))
+    max.yld<-max.yld %>% mutate(yld.hot.ha=yld.hot*c.dens,yld.dry.ha=yld.dry*c.dens)
+    results_max<-bind_rows(results_max,max.yld)
+  rm(max.yld)
+  #extract conditions for minimium variability value (minimize difference and not negative)
+  #for hot year
+  #var.hot<-apply(cbind(betas.elev,betas.sh1,betas.pt1), 1, var_hot)
+  #output<-tibble(var.hot,betas.elev,betas.sh1,betas.pt1)
+  #min.hot <- output %>% filter(var.hot>0) %>% filter(var.hot==min(var.hot)) %>% rename(z.elevation=betas.elev,z.diversity=betas.sh1,z.patcharea=betas.pt1) %>% 
+  #  mutate(yld=yld_norm(cbind(z.elevation,z.diversity,z.patcharea)),yld.dry=yld_dry(cbind(z.elevation,z.diversity,z.patcharea)),yld.hot=yld_hot(cbind(z.elevation,z.diversity,z.patcharea))) %>% 
+  #  mutate(yld.ha=yld*c.dens,
+  #    yld.hot.ha=yld.hot*c.dens,yld.dry.ha=yld.dry*c.dens,
+  #         elevation=z.elevation*2*elev.vals$sd+elev.vals$mean,
+  #         diversity=z.diversity*2*div.vals$sd+div.vals$mean,
+  #         patcharea=z.patcharea*2*patch.vals$sd+patch.vals$mean,x=i,y=j)
+  var.min<-apply(cbind(betas.elev,betas.sh1,betas.pt1), 1, var_min)
+  yld.hot<-apply(cbind(betas.elev,betas.sh1,betas.pt1), 1, yld_hot)
+  yld.dry<-apply(cbind(betas.elev,betas.sh1,betas.pt1), 1, yld_dry)
+  
+  output1<-tibble(var.min,yld,yld.hot,yld.dry,betas.elev,betas.sh1,betas.pt1)
+  min.var <- output1 %>% filter(var.min>0&yld>0,yld.hot>0,yld.dry>0) %>% filter(var.min==min(var.min)) %>% rename(z.elevation=betas.elev,z.diversity=betas.sh1,z.patcharea=betas.pt1) %>% 
+   # mutate(yld=yld_norm(cbind(z.elevation,z.diversity,z.patcharea)),yld.dry=yld_dry(cbind(z.elevation,z.diversity,z.patcharea)),yld.hot=yld_hot(cbind(z.elevation,z.diversity,z.patcharea))) %>% 
+    mutate(yld.ha=yld*c.dens,
+           yld.hot.ha=yld.hot*c.dens,yld.dry.ha=yld.dry*c.dens,
+           elevation=z.elevation*2*elev.vals$sd+elev.vals$mean,
+           diversity=z.diversity*2*div.vals$sd+div.vals$mean,
+           patcharea=z.patcharea*2*patch.vals$sd+patch.vals$mean,x=i,y=j)
+  results_var<-bind_rows(results_var,min.var)
+  rm(output1,min.var,var.min,yld.hot,yld.dry,yld)
+  }
+}
 
+#plot yield maximisation
+results_max <- results_max %>% group_by(x,y) %>% mutate(m.diff=mean(yld.hot.ha-yld.ha,yld.dry.ha-yld.ha))
+  
+g1<-ggplot(results_max, aes( x,y, z = yld.ha)) +geom_raster(aes(fill=yld.ha)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c()+ theme_classic() +
+  labs(fill="Yield [kg/ha]") + ggtitle("Maximising Yields:\nNormal Year") + 
+  theme(text=element_text(size=16))
+g2<-ggplot(results_max, aes( x,y, z = yld.hot.ha)) +geom_raster(aes(fill=yld.hot.ha)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c()+ theme_classic() +
+  labs(fill="Yield [kg/ha]") + ggtitle("Hot Year") + 
+  theme(text=element_text(size=16))
+g3<-ggplot(results_max, aes( x,y, z = yld.dry.ha)) +geom_raster(aes(fill=yld.dry.ha)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c()+ theme_classic() +
+  labs(fill="Yield [kg/ha]") + ggtitle("Dry Year") + 
+  theme(text=element_text(size=16))
+g4<-ggplot(results_max, aes( x,y, z = m.diff)) +geom_raster(aes(fill=m.diff)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c()+ theme_classic() +
+  labs(fill="Yield Loss [kg/ha]") + ggtitle("Average Loss") + 
+  theme(text=element_text(size=16))
+ggpubr::ggarrange(g1,g2,g3,g4,ncol=1,nrow=4,align="hv")
