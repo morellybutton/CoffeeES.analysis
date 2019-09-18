@@ -953,3 +953,31 @@ c2<-ggpubr::ggarrange(g2,g3,g5,g6,ncol=2,nrow=2,common.legend = T,legend="right"
 ggpubr::ggarrange(c1,c2,nrow=1,ncol=2,align="hv",widths=c(1.05,2))
 
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/Model.yield.diffyld.elev.patcharea.pdf",height=7,width=12)
+
+#TerraClim Figures
+terra_clim<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
+
+#anomalies around year of study, with harvesting dates
+harvest<-data_frame(c("2014-10-01","2015-10-01","2016-10-01"))
+colnames(harvest)<-"harvest.date"
+g1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
+  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
+  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
+  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2016-02-01"),y=100,label="Dry Year",size=8) +
+  geom_segment(aes(x = as.Date("2016-01-01"), y = 70, xend = as.Date("2016-10-01"), yend = 70), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
+
+g2<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,vpd_anom)) + geom_bar(stat="identity") + theme_classic() +
+  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
+  ylab("Vapour Pressure Deficit\nAnomaly [kPa]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")  +
+  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2014-03-01"),y=0.4,label="Normal Year",size=8) +
+  geom_segment(aes(x = as.Date("2014-03-01"), y = 0.33, xend = as.Date("2014-10-01"), yend = 0.33), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
+
+
+g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
+  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
+  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")  +
+  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2015-01-01"),y=2.5,label="Hot Year",size=8) +
+  geom_segment(aes(x = as.Date("2015-01-01"), y = 2.15, xend = as.Date("2015-10-01"), yend = 2.15), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
+
+ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.Anom.Comparison.pdf",height=10,width=12)

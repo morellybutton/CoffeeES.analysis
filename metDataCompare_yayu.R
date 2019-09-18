@@ -334,34 +334,37 @@ ggsave(paste0(getwd(),"/Analysis/ElNino/TerraClim.MaxTComparison.pdf"))
 #combining satellite and ground measurements for comparison
 sat_anom<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
 
+met_ppt<-read_csv(paste0(getwd(),"/MetData/ECO_12_monthlyppt.csv"))
+met_summ<-read_csv(paste0(getwd(),"/MetData/ECO_12_summary.csv"))
+met_summ$month <- as.Date(paste(year(met_summ$day),month(met_summ$day),"01",sep="-"),format="%Y-%m-%d")
+met_comp <- met_summ %>% group_by(month) %>% summarise(max_temp=mean(Tmax,na.rm=T),min_temp=mean(Tmin,na.rm=T),vpd=mean(VPDmax,na.rm=T))
+
 met_comp<-met_comp %>% rename(Date=month,g.max_temp=max_temp,g.min_temp=min_temp,g.vpd=vpd)
-met_comp<-left_join(met_comp,sat_anom %>% select(Date,vpd,tmax),by="Date")
+met_comp<-left_join(met_comp,sat_anom %>% filter(site=="B19") %>% select(Date,vpd,tmax),by="Date")
 met_ppt<-met_ppt %>% rename(Date=month)
-met_ppt<-left_join(met_ppt,sat_anom %>% select(Date,ppt),by="Date")
+met_ppt<-left_join(met_ppt,sat_anom %>% filter(site=="B19") %>% select(Date,ppt),by="Date")
 
 #plot the measurements
 lm_eqn<-lm(tmax~g.max_temp,data=met_comp)
 g1<-met_comp %>% ggplot() + geom_point(aes(g.max_temp,tmax)) + theme_classic() + ylab("TerraClim Max T [C]") +
   xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,tmax),method="lm") + 
-  annotate("text",x=23,y=30,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T)
+  annotate("text",x=23,y=32.5,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T,size=7) +
+  theme(text=element_text(size=16))
        
-  
-lm_eqn2<-lm(min_temp~g.min_temp,data=met_comp)
-g2<-met_comp %>% ggplot() + geom_point(aes(g.min_temp,min_temp)) + theme_classic() + ylab("TerraClim Min T [C]") +
-  xlab("Measured Min T [C]") + geom_smooth(aes(g.min_temp,min_temp),method="lm") + 
-  annotate("text",x=15,y=17,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn2)$adj.r.squared,2)),parse=T)
-
-
-lm_eqn3<-lm(vpd~g.vpd/10,data=met_comp)
+met_comp<-met_comp %>% mutate(g.vpd_10=g.vpd/10)
+lm_eqn3<-lm(vpd~g.vpd_10,data=met_comp)
 g3<-met_comp %>% ggplot() + geom_point(aes(g.vpd/10,vpd)) + theme_classic() + ylab("TerraClim VPD [kPa]") +
   xlab("Measured VPD [kPa]") + geom_smooth(aes(g.vpd/10,vpd),method="lm") + 
-  annotate("text",x=1.0,y=2.0,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn3)$adj.r.squared,2)),parse=T)
+  annotate("text",x=1.0,y=2.0,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn3)$adj.r.squared,2)),parse=T,size=7) +
+  theme(text=element_text(size=16))
 
-lm_eqn4<-lm(precip~Tppt,data=met_ppt)
-g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,precip)) + theme_classic() + ylab("TerraClim Precipitation [mm]") +
-  xlab("Measured Precipitation [mm]") + geom_smooth(aes(Tppt,precip),method="lm") +
-  annotate("text",x=50,y=350,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn4)$adj.r.squared,2)),parse=T)
 
-ggarrange(g1,g2,g3,g4,ncol=2,nrow=2)
-ggsave(paste0(getwd(),"/Analysis/ElNino/TerraClimvsGroundMeasures.pdf"))
+lm_eqn4<-lm(ppt~Tppt,data=met_ppt)
+g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,ppt)) + theme_classic() + ylab("TerraClim Precipitation [mm]") +
+  xlab("Measured Precipitation [mm]") + geom_smooth(aes(Tppt,ppt),method="lm") +
+  annotate("text",x=50,y=400,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn4)$adj.r.squared,2)),parse=T,size=7) +
+  theme(text=element_text(size=16))
+
+ggarrange(g1,g3,g4,ncol=3,nrow=1)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClimvsGroundMeasures.pdf",height=5,width=15)
 

@@ -734,17 +734,23 @@ harvest<-data_frame(c("2014-10-01","2015-10-01","2016-10-01"))
 colnames(harvest)<-"harvest.date"
 g1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
   geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
+  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
+  theme(text=element_text(size=16))
 
 g2<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,vpd_anom)) + geom_bar(stat="identity") + theme_classic() +
   geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Vapour Pressure Deficit\nAnomaly [kPa]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
+  ylab("Vapour Pressure Deficit\nAnomaly [kPa]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")  +
+  theme(text=element_text(size=16))
 
 g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
   geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")
+  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")  +
+  theme(text=element_text(size=16))
+
 ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClim.Anom.Comparison.pdf",height=10,width=10)
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Resilience/TerraClim.Anom.Comparison.pdf",height=10,width=10)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.Anom.Comparison.pdf",height=5,width=11)
+
 
 #compare conditions in year 1 and year 2 separately
 s1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2015&year<2016),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
