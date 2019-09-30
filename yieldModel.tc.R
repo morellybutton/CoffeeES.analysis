@@ -958,7 +958,7 @@ ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/La
 terra_clim<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
 
 #anomalies around year of study, with harvesting dates
-harvest<-data_frame(c("2014-10-01","2015-10-01","2016-10-01"))
+harvest<-tibble(c("2014-10-01","2015-10-01","2016-10-01"))
 colnames(harvest)<-"harvest.date"
 g1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
   geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
@@ -981,3 +981,19 @@ g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax
 
 ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.Anom.Comparison.pdf",height=10,width=12)
+
+#assess the frequency of hot or dry years (plot standardised anomalies)
+z1<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,tmax_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
+  xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Maximum Temperature Anomalies") +
+  stat_smooth() + theme(text=element_text(size=16))
+ 
+z3<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,precip_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
+  xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Precipitation Anomalies") +
+  stat_smooth() + theme(text=element_text(size=16))
+
+z2<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,vpd_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
+  xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Vapour Pressure Deficit Anomalies") +
+  stat_smooth() + theme(text=element_text(size=16))
+
+ggarrange(z1,z2,z3,ncol=1,nrow=3,align="hv",labels="auto")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.StdAnom.Comparison.pdf",height=9,width=12)
