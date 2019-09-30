@@ -23,6 +23,34 @@ yld_norm <- function(x) {
   int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3
 }  
 
+int14.l <-tmp.14 %>% filter(X=="(Intercept)") %>% select(Lower.CL) %>% as.numeric()
+shan.i14.l <- tmp.14 %>% filter(X=="rescale(Shannon.i)") %>% select(Lower.CL) %>% as.numeric()
+ba.l14.l <- tmp.14 %>% filter(X=="rescale(BA.legume)") %>% select(Lower.CL) %>% as.numeric()
+int.sb14.l <- tmp.14 %>% filter(X=="rescale(BA.legume):rescale(Shannon.i)") %>% select(Lower.CL) %>% as.numeric()
+p.tch14.l <- tmp.14 %>% filter(X=="rescale(patcharea)") %>% select(Lower.CL) %>% as.numeric()
+elev14.l <- tmp.14 %>% filter(X=="rescale(elevation)") %>% select(Lower.CL) %>% as.numeric()
+
+yld_norm_lower <- function(x) {
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  int14.l + elev14.l*x1 + shan.i14.l*x2 + ba.l14.l*max.ba + int.sb14.l*max.ba*x2 + p.tch14.l*x3
+}  
+
+int14.u <-tmp.14 %>% filter(X=="(Intercept)") %>% select(Upper.CL) %>% as.numeric()
+shan.i14.u <- tmp.14 %>% filter(X=="rescale(Shannon.i)") %>% select(Upper.CL) %>% as.numeric()
+ba.l14.u <- tmp.14 %>% filter(X=="rescale(BA.legume)") %>% select(Upper.CL) %>% as.numeric()
+int.sb14.u <- tmp.14 %>% filter(X=="rescale(BA.legume):rescale(Shannon.i)") %>% select(Upper.CL) %>% as.numeric()
+p.tch14.u <- tmp.14 %>% filter(X=="rescale(patcharea)") %>% select(Upper.CL) %>% as.numeric()
+elev14.u <- tmp.14 %>% filter(X=="rescale(elevation)") %>% select(Upper.CL) %>% as.numeric()
+
+yld_norm_upper <- function(x) {
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  int14.u + elev14.u*x1 + shan.i14.u*x2 + ba.l14.u*max.ba + int.sb14.u*max.ba*x2 + p.tch14.u*x3
+}  
+
 #for 2015 yield difference
 tmp.15<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_logylddiff15.delta2.v3.confint.csv"))
 
@@ -37,6 +65,31 @@ yld_hot <- function(x){
   x2 <- x[2] #shade diversity
   x3 <- x[3] #patcharea
   (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int15 + shan.i15*x2 + ba.l15*max.ba +  p.tch15*x3)
+}
+
+#equation for hot year
+int15.l <-tmp.15 %>% filter(X=="(Intercept)") %>% select(Lower.CL) %>% as.numeric()
+shan.i15.l <- tmp.15 %>% filter(X=="rescale(Shannon.i)") %>% select(Lower.CL) %>% as.numeric()
+ba.l15.l <- tmp.15 %>% filter(X=="rescale(BA.legume)") %>% select(Lower.CL) %>% as.numeric()
+p.tch15.l <- tmp.15 %>% filter(X=="rescale(patcharea)") %>% select(Lower.CL) %>% as.numeric()
+
+yld_hot_lower <- function(x){
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int15.l + shan.i15.l*x2 + ba.l15.l*max.ba +  p.tch15.l*x3)
+}
+
+int15.u <-tmp.15 %>% filter(X=="(Intercept)") %>% select(Upper.CL) %>% as.numeric()
+shan.i15.u <- tmp.15 %>% filter(X=="rescale(Shannon.i)") %>% select(Upper.CL) %>% as.numeric()
+ba.l15.u <- tmp.15 %>% filter(X=="rescale(BA.legume)") %>% select(Upper.CL) %>% as.numeric()
+p.tch15.u <- tmp.15 %>% filter(X=="rescale(patcharea)") %>% select(Upper.CL) %>% as.numeric()
+
+yld_hot_upper <- function(x){
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int15.u + shan.i15.u*x2 + ba.l15.u*max.ba +  p.tch15.u*x3)
 }
 
 #for 2016 yield difference
@@ -54,6 +107,32 @@ yld_dry <- function(x) {
   x2 <- x[2] #shade diversity
   x3 <- x[3] #patcharea
   (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int16 + elev16*x1 + shan.i16*x2 + ba.l16*max.ba + int.sb16*max.ba*x2) 
+}
+
+int16.l <- tmp.16 %>% filter(Comparison=="(Intercept)") %>% select(Lower.CL) %>% as.numeric()
+shan.i16.l <- tmp.16 %>% filter(Comparison=="rescale(Shannon.i)") %>% select(Lower.CL) %>% as.numeric()
+ba.l16.l <- tmp.16 %>% filter(Comparison=="rescale(BA.legume)") %>% select(Lower.CL) %>% as.numeric()
+int.sb16.l <- tmp.16 %>% filter(Comparison=="rescale(Shannon.i):rescale(BA.legume)") %>% select(Lower.CL) %>% as.numeric()
+elev16.l <- tmp.16 %>% filter(Comparison=="rescale(elevation)") %>% select(Lower.CL) %>% as.numeric()
+
+yld_dry_lower <- function(x) {
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int16.l + elev16.l*x1 + shan.i16.l*x2 + ba.l16.l*max.ba + int.sb16.l*max.ba*x2) 
+}
+
+int16.u <- tmp.16 %>% filter(Comparison=="(Intercept)") %>% select(Upper.CL) %>% as.numeric()
+shan.i16.u <- tmp.16 %>% filter(Comparison=="rescale(Shannon.i)") %>% select(Upper.CL) %>% as.numeric()
+ba.l16.u <- tmp.16 %>% filter(Comparison=="rescale(BA.legume)") %>% select(Upper.CL) %>% as.numeric()
+int.sb16.u <- tmp.16 %>% filter(Comparison=="rescale(Shannon.i):rescale(BA.legume)") %>% select(Upper.CL) %>% as.numeric()
+elev16.u <- tmp.16 %>% filter(Comparison=="rescale(elevation)") %>% select(Upper.CL) %>% as.numeric()
+
+yld_dry_upper <- function(x) {
+  x1 <- x[1] #elevation
+  x2 <- x[2] #shade diversity
+  x3 <- x[3] #patcharea
+  (int14 + elev14*x1 + shan.i14*x2 + ba.l14*max.ba + int.sb14*max.ba*x2 + p.tch14*x3)*exp(int16.u + elev16.u*x1 + shan.i16.u*x2 + ba.l16.u*max.ba + int.sb16.u*max.ba*x2) 
 }
 
 #equation to minimize variability between all years (take mean of difference between normal and shock years)
@@ -244,9 +323,21 @@ for(i in 1:10){
 
 #plot yield maximisation
 results_max <- results_max %>% group_by(x,y) %>% 
-  mutate(m.diff=mean(yld.hot.ha-yld.ha,yld.dry.ha-yld.ha),diff.hot=yld.hot.ha-yld.ha,diff.dry=yld.dry.ha-yld.ha)
+  mutate(m.diff=mean(yld.hot.ha-yld.ha,yld.dry.ha-yld.ha),diff.hot=yld.hot.ha-yld.ha,diff.dry=yld.dry.ha-yld.ha) %>% 
+  mutate(yld.ha.low= yld_norm_lower(cbind(z.elevation,z.diversity,z.patcharea))*m_density,
+         yld.ha.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_norm_upper)*m_density,
+         yld.hot.low=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_hot_lower)*m_density,
+         yld.hot.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_hot_upper)*m_density,
+         yld.dry.low=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_dry_lower)*m_density,
+         yld.dry.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_dry_upper)*m_density)
 results_var <- results_var %>% group_by(x,y) %>% 
-  mutate(m.diff=mean(yld.hot.ha-yld.ha,yld.dry.ha-yld.ha),diff.hot=yld.hot.ha-yld.ha,diff.dry=yld.dry.ha-yld.ha)
+  mutate(m.diff=mean(yld.hot.ha-yld.ha,yld.dry.ha-yld.ha),diff.hot=yld.hot.ha-yld.ha,diff.dry=yld.dry.ha-yld.ha) %>% 
+  mutate(yld.ha.low=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_norm_lower)*m_density,
+         yld.ha.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_norm_upper)*m_density,
+         yld.hot.low=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_hot_lower)*m_density,
+         yld.hot.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_hot_upper)*m_density,
+         yld.dry.low=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_dry_lower)*m_density,
+         yld.dry.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_dry_upper)*m_density)
 
 norm_max=results_max %>% pull(yld.ha) %>% sum()
 norm_var=results_var %>% pull(yld.ha) %>% sum()
@@ -294,23 +385,36 @@ g3c<-ggpubr::ggarrange(g3,g3b,ncol=2,nrow=1,align="hv",common.legend=T,legend="r
 ggpubr::ggarrange(g1c,g2c,g3c,ncol=1,nrow=3,align="hv")
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/MaximisationvsVariability.rasters.pdf",height=11,width=9)
 
+results_max_low<-results_max %>% ungroup() %>% select(yld.ha.low,yld.dry.low,yld.hot.low) %>% rename(yld.ha=yld.ha.low,yld.dry=yld.dry.low,yld.hot=yld.hot.low)
+results_max_up<-results_max %>% ungroup() %>% select(yld.ha.up,yld.dry.up,yld.hot.up) %>% rename(yld.ha=yld.ha.up,yld.dry=yld.dry.up,yld.hot=yld.hot.up)
+results_max_ci<-bind_rows(results_max_low,results_max_up)
+
 #or do again as histograms
 b1 <- ggplot(results_max,aes(yld.ha)) + geom_freqpoly(binwidth=50, aes(color="Normal Year"),size=1) + theme_classic() + 
   xlab("Farm Yield [kg/ha]") +
   geom_freqpoly(data=results_max,aes(yld.hot.ha,color="Hot Year"),binwidth=25,size=1) + 
   geom_freqpoly(data=results_max,aes(yld.dry.ha,color="Dry Year"),binwidth=25,size=1) +
+  #geom_area(data=results_max_ci,stat="bin",binwidth=50,aes(yld.ha,fill="Normal Year"),alpha=1/2) +
+  #geom_area(data=results_max_ci,stat="bin",binwidth=50,aes(yld.hot,fill="Hot Year"),alpha=1/2) +
+  #geom_area(data=results_max_ci,stat="bin",binwidth=25,aes(yld.dry,fill="Dry Year"),alpha=1/2) +
   #geom_vline(xintercept=0,linetype="dashed") +
   theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + #xlim(-0.5,4000) +
-  scale_color_viridis_d(begin=0.8,end=0) + #annotate("text",x=450,y=100,label=paste0("Normal Year Total = ",signif(norm_max,4)," kg"),size=5) + 
+  scale_color_viridis_d(begin=0.8,end=0) + #scale_fill_viridis_d(begin=0.8,end=0) + #annotate("text",x=450,y=100,label=paste0("Normal Year Total = ",signif(norm_max,4)," kg"),size=5) + 
   ggtitle("Maximising Yields") 
   #annotate("text",x=450,y=93,label=paste0("Hot Year Total = ",signif(hot_max,4)," kg"),size=5) + 
   #annotate("text",x=450,y=86,label=paste0("Dry Year Total = ",signif(dry_max,4)," kg"),size=5)
 
+results_var_low<-results_var %>% ungroup() %>% select(yld.ha.low,yld.dry.low,yld.hot.low) %>% rename(yld.ha=yld.ha.low,yld.dry=yld.dry.low,yld.hot=yld.hot.low)
+results_var_up<-results_var %>% ungroup() %>% select(yld.ha.up,yld.dry.up,yld.hot.up) %>% rename(yld.ha=yld.ha.up,yld.dry=yld.dry.up,yld.hot=yld.hot.up)
+results_var_ci<-bind_rows(results_var_low,results_var_up)
 
 b2 <- ggplot(results_var,aes(yld.ha)) + geom_freqpoly(binwidth=50, aes(color="Normal Year"),size=1) + theme_classic() + 
   xlab("Farm Yield [kg/ha]") +
   geom_freqpoly(data=results_var,aes(yld.hot.ha,color="Hot Year"),binwidth=50,size=1) + 
   geom_freqpoly(data=results_var,aes(yld.dry.ha,color="Dry Year"),binwidth=50,size=1) +
+  #geom_area(data=results_max_ci,stat="bin",binwidth=50,aes(yld.ha,fill="Normal Year"),alpha=1/2) +
+  #geom_area(data=results_max_ci,stat="bin",binwidth=50,aes(yld.hot,fill="Hot Year"),alpha=1/2) +
+  #geom_area(data=results_max_ci,stat="bin",binwidth=25,aes(yld.dry,fill="Dry Year"),alpha=1/2) +
   #geom_vline(xintercept=0,linetype="dashed") +
   theme(text=element_text(size=14),legend.title=element_blank(),legend.text=element_text(size=14)) + #xlim(-0.5,4000) +
   scale_color_viridis_d(begin=0.8,end=0) + #annotate("text",x=500,y=40,label=paste0("Normal Year Total = ",signif(norm_var,4)," kg"),size=5) + 
