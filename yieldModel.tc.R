@@ -995,5 +995,5 @@ z2<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,vpd_anom_sigma
   xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Vapour Pressure Deficit Anomalies") +
   stat_smooth() + theme(text=element_text(size=16))
 
-ggarrange(z1,z2,z3,ncol=1,nrow=3,align="hv",labels="auto")
+ggarrange(z3,z2,z1,ncol=1,nrow=3,align="hv",labels="auto")
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.StdAnom.Comparison.pdf",height=9,width=12)
