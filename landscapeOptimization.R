@@ -340,7 +340,13 @@ results_var <- results_var %>% group_by(x,y) %>%
          yld.dry.up=apply(cbind(z.elevation,z.diversity,z.patcharea), 1, yld_dry_upper)*m_density)
 
 norm_max=results_max %>% pull(yld.ha) %>% sum()
+norm_max_up=results_max %>% pull(yld.ha.up) %>% sum()
+norm_max_low=results_max %>% pull(yld.ha.low) %>% sum()
+
 norm_var=results_var %>% pull(yld.ha) %>% sum()
+norm_var_up=results_var %>% pull(yld.ha.up) %>% sum()
+norm_var_low=results_var %>% pull(yld.ha.low) %>% sum()
+
 g1<-ggplot(results_max, aes( x,y, z = yld.ha)) +geom_raster(aes(fill=yld.ha)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
   scale_fill_viridis_c(limits=c(0,1000),breaks=seq(0,1000, by=150))+ theme_classic() +
@@ -354,7 +360,13 @@ g1b<-ggplot(results_var, aes( x,y, z = yld.ha)) +geom_raster(aes(fill=yld.ha)) +
 g1c<-ggpubr::ggarrange(g1,g1b,ncol=2,nrow=1,align="hv",common.legend=T,legend="right")
 
 hot_max=results_max %>% pull(yld.hot.ha) %>% sum()
+hot_max_low=results_max %>% pull(yld.hot.low) %>% sum()
+hot_max_up=results_max %>% pull(yld.hot.up) %>% sum()
+
 hot_var=results_var %>% pull(yld.hot.ha) %>% sum()
+hot_var_low=results_var %>% pull(yld.hot.low) %>% sum()
+hot_var_up=results_var %>% pull(yld.hot.up) %>% sum()
+
 g2<-ggplot(results_max, aes( x,y, z = yld.hot.ha)) +geom_raster(aes(fill=yld.hot.ha)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
   scale_fill_viridis_c(limits=c(0,1000),breaks=seq(0,1000,by=150))+ theme_classic() +
@@ -368,7 +380,12 @@ g2b<-ggplot(results_var, aes( x,y, z = yld.hot.ha)) +geom_raster(aes(fill=yld.ho
 g2c<-ggpubr::ggarrange(g2,g2b,ncol=2,nrow=1,align="hv",common.legend=T,legend="right")
 
 dry_max=results_max %>% pull(yld.dry.ha) %>% sum()
+dry_max_low=results_max %>% pull(yld.dry.low) %>% sum()
+dry_max_up=results_max %>% pull(yld.dry.up) %>% sum()
+
 dry_var=results_var %>% pull(yld.dry.ha) %>% sum()
+dry_var_low=results_var %>% pull(yld.dry.low) %>% sum()
+dry_var_up=results_var %>% pull(yld.dry.up) %>% sum()
 
 g3<-ggplot(results_max, aes( x,y, z = yld.dry.ha)) +geom_raster(aes(fill=yld.dry.ha)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
@@ -426,12 +443,15 @@ ggpubr::ggarrange(b1,b2,ncol=2,nrow=1,align="hv",common.legend=T,legend="right")
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/MaximisationvsVariability.histos.pdf",height=5,width=11)
 
 #save .csv for table
-tmp<-tibble(Maximising.Yields=norm_max,Minimising.Variability=norm_var)
+tmp<-tibble(Maximising.Yields=norm_max,Maximising.Yields.ci=0.5*sum(norm_max_low-norm_max,norm_max-norm_max_up),
+            Minimising.Variability=norm_var,Minimising.Variability.ci=0.5*sum(norm_var-norm_var_low,norm_var_up-norm_var))
 tmp$Climate.Conditions="Normal"
-tmp2=tibble(Maximising.Yields=hot_max,Minimising.Variability=hot_var)
+tmp2=tibble(Maximising.Yields=hot_max,Maximising.Yields.ci=0.5*sum(hot_max-hot_max_low,hot_max_up-hot_max),
+            Minimising.Variability=hot_var,Minimising.Variability.ci=0.5*sum(hot_var-hot_var_low,hot_var_up-hot_var))
 tmp2$Climate.Conditions="Hot"
 tmp<-bind_rows(tmp,tmp2)
-tmp2=tibble(Maximising.Yields=dry_max,Minimising.Variability=dry_var)
+tmp2=tibble(Maximising.Yields=dry_max,Maximising.Yields.ci=0.5*sum(dry_max_low-dry_max,dry_max-dry_max_up),
+            Minimising.Variability=dry_var,Minimising.Variability.ci=0.5*sum(dry_var-dry_var_low,dry_var_up-dry_var))
 tmp2$Climate.Conditions="Dry"
 tmp<-bind_rows(tmp,tmp2)
 
