@@ -1,7 +1,7 @@
 #Analysis of coffee ES contributions to yield with TerraClim data
 
 library(tidyverse)
-library(AICcmodavg)
+#library(AICcmodavg)
 
 setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu")
 #setwd("/users/alex/Documents/Research/Africa/ECOLIMITS/Data/Yayu/")
@@ -962,38 +962,45 @@ harvest<-tibble(c("2014-10-01","2015-10-01","2016-10-01"))
 colnames(harvest)<-"harvest.date"
 g1<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,precip_anom)) + geom_bar(stat="identity") + theme_classic() +
   geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red") +
-  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2016-02-01"),y=100,label="Dry Year",size=8) +
-  geom_segment(aes(x = as.Date("2016-01-01"), y = 70, xend = as.Date("2016-10-01"), yend = 70), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
-
-g2<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,vpd_anom)) + geom_bar(stat="identity") + theme_classic() +
-  geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Vapour Pressure Deficit\nAnomaly [kPa]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")  +
-  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2014-03-01"),y=0.4,label="Normal Year",size=8) +
-  geom_segment(aes(x = as.Date("2014-03-01"), y = 0.33, xend = as.Date("2014-10-01"), yend = 0.33), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
-
+  ylab("Precipitation\nAnomaly [mm]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed") +
+  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2016-04-01"),y=200,label="Dry Year",size=8,fontface =2) +
+  annotate("text",x=as.Date("2014-04-01"),y=200,label="Normal Year",size=8,fontface =2) +
+  annotate("text",x=as.Date("2015-04-01"),y=200,label="Hot Year",size=8,fontface =2) 
+  #geom_segment(aes(x = as.Date("2016-01-01"), y = 70, xend = as.Date("2016-10-01"), yend = 70), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
 
 g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax_anom)) + geom_bar(stat="identity") + theme_classic() +
   geom_rect(inherit.aes = F,mapping=aes(xmin=as.Date("2015-06-01"),xmax=as.Date("2016-03-01"),ymin=-Inf,ymax=Inf),fill='lightgrey',alpha=1/50) +
-  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed",color="red")  +
-  theme(text=element_text(size=16)) + annotate("text",x=as.Date("2015-01-01"),y=2.5,label="Hot Year",size=8) +
-  geom_segment(aes(x = as.Date("2015-01-01"), y = 2.15, xend = as.Date("2015-10-01"), yend = 2.15), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
+  ylab("Maximum Temperature\nAnomaly [C]") + xlab("Date") + geom_vline(data=harvest,aes(xintercept=as.Date(harvest.date)),linetype="dashed")  +
+  theme(text=element_text(size=16)) #+ annotate("text",x=as.Date("2015-01-01"),y=2.5,label="Hot Year",size=8) +
+ # geom_segment(aes(x = as.Date("2015-01-01"), y = 2.15, xend = as.Date("2015-10-01"), yend = 2.15), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
 
-ggarrange(g1,g2,g3,ncol=1,nrow=3,align="hv",labels="auto")
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.Anom.Comparison.pdf",height=10,width=12)
+ggpubr::ggarrange(g1,g3,ncol=1,nrow=2,align="hv",heights=c(1.25,1),labels="auto")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.Anom.Comparison.pdf",height=8,width=12)
+
+#open ONI values
+oni<-read_csv("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ONI.csv")
+#add "month" value
+oni <- oni %>% mutate(Date=as.Date(paste0(PeriodNum,"-01"),format="%Y-%m-%d")) %>% rename(oni=NOAA)
+
+terra_clim<-left_join(terra_clim,oni %>% select(Date,oni),by="Date")
 
 #assess the frequency of hot or dry years (plot standardised anomalies)
-z1<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,tmax_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
+z1<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,tmax_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
   xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Maximum Temperature Anomalies") +
-  stat_smooth() + theme(text=element_text(size=16))
+  stat_smooth(color="black") + theme(text=element_text(size=16),legend.title.align=0.5 ) + scale_fill_gradient2( low = "blue", mid = "white",
+                                                                           high = "red", midpoint = 0, space = "Lab",
+                                                                           guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") 
+  
  
-z3<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,precip_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
+z3<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,precip_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
   xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Precipitation Anomalies") +
-  stat_smooth() + theme(text=element_text(size=16))
+  stat_smooth(color="black") + theme(text=element_text(size=16),legend.title.align=0.5) + scale_fill_gradient2( low = "blue", mid = "white",
+                                                                                                   high = "red", midpoint = 0, space = "Lab",
+                                                                                                   guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") 
 
 z2<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,vpd_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
   xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Vapour Pressure Deficit Anomalies") +
   stat_smooth() + theme(text=element_text(size=16))
 
-ggarrange(z3,z2,z1,ncol=1,nrow=3,align="hv",labels="auto")
+ggpubr::ggarrange(z3,z1,ncol=1,nrow=2,align="hv",labels="auto",common.legend=T)
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.StdAnom.Comparison.pdf",height=9,width=12)
