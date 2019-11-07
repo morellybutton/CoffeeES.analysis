@@ -347,9 +347,9 @@ met_ppt<-left_join(met_ppt,sat_anom %>% filter(site=="B19") %>% select(Date,ppt)
 #plot the measurements
 lm_eqn<-lm(tmax~g.max_temp,data=met_comp)
 g1<-met_comp %>% ggplot() + geom_point(aes(g.max_temp,tmax)) + theme_classic() + ylab("TerraClim Max T [C]") +
-  xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,tmax),method="lm") + 
-  annotate("text",x=23,y=32.5,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T,size=7) +
-  theme(text=element_text(size=16))
+  xlab("Measured Max T [C]") + geom_smooth(aes(g.max_temp,tmax),method="lm") + xlim(21,32) + ylim(21,32) +
+  annotate("text",x=23,y=30.5,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn)$adj.r.squared,2)),parse=T,size=7) +
+  theme(text=element_text(size=16)) + geom_abline(slope=1,intercept=0,linetype="dashed")
        
 met_comp<-met_comp %>% mutate(g.vpd_10=g.vpd/10)
 lm_eqn3<-lm(vpd~g.vpd_10,data=met_comp)
@@ -361,10 +361,10 @@ g3<-met_comp %>% ggplot() + geom_point(aes(g.vpd/10,vpd)) + theme_classic() + yl
 
 lm_eqn4<-lm(ppt~Tppt,data=met_ppt)
 g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,ppt)) + theme_classic() + ylab("TerraClim Precipitation [mm]") +
-  xlab("Measured Precipitation [mm]") + geom_smooth(aes(Tppt,ppt),method="lm") +
-  annotate("text",x=50,y=400,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn4)$adj.r.squared,2)),parse=T,size=7) +
-  theme(text=element_text(size=16))
+  xlab("Measured Precipitation [mm]") + geom_smooth(aes(Tppt,ppt),method="lm") + xlim(0,400) + ylim(0,400) +
+  annotate("text",x=50,y=350,label=paste0("italic(R) ^ 2 ==",signif(summary(lm_eqn4)$adj.r.squared,2)),parse=T,size=7) +
+  theme(text=element_text(size=16)) + geom_abline(slope=1,intercept=0,linetype="dashed")
 
-ggarrange(g1,g3,g4,ncol=3,nrow=1)
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClimvsGroundMeasures.pdf",height=5,width=15)
+ggpubr::ggarrange(g1,g4,ncol=2,nrow=1)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClimvsGroundMeasures.pdf",height=5,width=10)
 

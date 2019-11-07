@@ -46,21 +46,23 @@ d.F <- left_join(d.F,low.yield15,by=c("Plot","Shrub.id","year"))
 d.F <- d.F %>% mutate(low.yield15=replace(low.yield15,is.na(low.yield15)&year==2015,0))
 d.F <- left_join(d.F,low.yield16,by=c("Plot","Shrub.id","year"))
 d.F <- d.F %>% mutate(low.yield16=replace(low.yield16,is.na(low.yield16)&year==2016,0))
-d.F <- d.F %>% group_by(Plot,Shrub.id,year) %>% mutate(low.yield=sum(low.yield14,low.yield15,low.yield16,na.rm=T))
+#d.F <- d.F %>% group_by(Plot,Shrub.id,year) %>% mutate(low.yield=sum(low.yield14,low.yield15,low.yield16,na.rm=T))
 
 #take sum of low yielding shrubs and only assign low.yield.bin 1 if sum is >=4
 d.F.plot <- d.F %>% group_by(Plot,year) %>% summarise(Shrub.kg=median(Shrub.kg,na.rm=T),Tot.fruits=median(Tot.fruits,na.rm=T),fruitset=median(fruitset,na.rm=T),
                                                       propCBB=median(propCBB,na.rm=T),propCBD=median(propCBD,na.rm=T),fruit.drop=median(fruit.drop,na.rm=T),prop.fdrop=median(prop.fdrop,na.rm=T),
                                                       Tot.leaves=median(Tot.leaves,na.rm=T),leaf.drop=median(leaf.drop,na.rm=T),prop.ldrop=median(prop.ldrop,na.rm=T),
                                                       propLM=median(propLM, na.rm=T), propCLR=median(propCLR,na.rm=T), propWilt=median(propWilt,na.rm=T),
-                                                      propHerb=median(propHerb,na.rm=T),low.yield=mean(low.yield,na.rm=T),low.yield14=sum(low.yield14,na.rm=T),low.yield15=sum(low.yield15,na.rm=T),
+                                                      propHerb=median(propHerb,na.rm=T),low.yield14=sum(low.yield14,na.rm=T),low.yield15=sum(low.yield15,na.rm=T),
                                                       low.yield16=sum(low.yield16,na.rm=T),prop.legume=mean(BA.legume/BA.all,na.rm=T)) %>% mutate(prop.legume=replace(prop.legume,is.na(prop.legume),0)) %>%
   mutate(low.yield14.bin=0,low.yield15.bin=0,low.yield16.bin=0) %>% mutate(low.yield14.bin=replace(low.yield14.bin,low.yield14>=4,1),
                                                                                            low.yield15.bin=replace(low.yield15.bin,low.yield15>=4,1),
                                                                                            low.yield16.bin=replace(low.yield16.bin,low.yield16>=4,1)) %>% ungroup()
 
 low.yield.plot<- d.F.plot %>% group_by(Plot) %>% summarise(low.yield1=sum(low.yield14.bin,low.yield15.bin,low.yield16.bin,na.rm=T),low.yield1415=sum(low.yield14.bin,low.yield15.bin,na.rm=T),low.yield1516=sum(low.yield15.bin,low.yield16.bin,na.rm=T),low.yield1416=sum(low.yield16.bin,low.yield14.bin,na.rm=T),low.yield.bin=0,low.yield1415.bin=0,low.yield1516.bin=0,low.yield1416.bin=0) %>% 
-  mutate(low.yield.bin=replace(low.yield.bin,low.yield1==2,1),low.yield1415.bin=replace(low.yield1415.bin,low.yield1415==2,1),low.yield1516.bin=replace(low.yield1516.bin,low.yield1516==2,1),low.yield1416.bin=replace(low.yield1416.bin,low.yield1416==2,1)) %>% ungroup()
+  #mutate(low.yield.bin=replace(low.yield.bin,low.yield1<2,0),low.yield1415.bin=replace(low.yield1415.bin,low.yield1415<2,0),low.yield1516.bin=replace(low.yield1516.bin,low.yield1516<2,0),low.yield1416.bin=replace(low.yield1416.bin,low.yield1416<2,0)) %>% 
+  mutate(low.yield.bin=replace(low.yield.bin,low.yield1==2,1),low.yield1415.bin=replace(low.yield1415.bin,low.yield1415==2,1),low.yield1516.bin=replace(low.yield1516.bin,low.yield1516==2,1),low.yield1416.bin=replace(low.yield1416.bin,low.yield1416==2,1)) %>%
+  ungroup()
 
 d.F.plot<-left_join(d.F.plot,low.yield.plot %>% select(Plot,low.yield.bin,low.yield1415.bin,low.yield1516.bin,low.yield1416.bin),by="Plot")
 d.F.plot$ID<-1:nrow(d.F.plot)
@@ -1054,6 +1056,7 @@ ggpubr::ggarrange(g1,g2,g3,g4,g5,g6,ncol=3,nrow=2,common.legend = T,legend="righ
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/Model.yield.elev.patcharea.pdf",height=7,width=11)
 
 #TerraClim Figures
+library(mgcv)
 terra_clim<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
 
 #anomalies around year of study, with harvesting dates
@@ -1075,31 +1078,3 @@ g3<-ggplot(terra_clim %>% filter(site=="B13"&year>=2014&year<2017),aes(Date,tmax
 
 ggpubr::ggarrange(g1,g3,ncol=1,nrow=2,align="hv",heights=c(1.25,1),labels="auto")
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.Anom.Comparison.pdf",height=8,width=12)
-
-#open ONI values
-oni<-read_csv("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ONI.csv")
-#add "month" value
-oni <- oni %>% mutate(Date=as.Date(paste0(PeriodNum,"-01"),format="%Y-%m-%d")) %>% rename(oni=NOAA)
-
-terra_clim<-left_join(terra_clim,oni %>% select(Date,oni),by="Date")
-
-#assess the frequency of hot or dry years (plot standardised anomalies)
-z1<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,tmax_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
-  xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Maximum Temperature Anomalies") +
-  stat_smooth(color="black") + theme(text=element_text(size=16),legend.title.align=0.5 ) + scale_fill_gradient2( low = "blue", mid = "white",
-                                                                           high = "red", midpoint = 0, space = "Lab",
-                                                                           guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") 
-  
- 
-z3<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,precip_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
-  xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Precipitation Anomalies") +
-  stat_smooth(color="black") + theme(text=element_text(size=16),legend.title.align=0.5) + scale_fill_gradient2( low = "blue", mid = "white",
-                                                                                                   high = "red", midpoint = 0, space = "Lab",
-                                                                                                   guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") 
-
-z2<-ggplot(terra_clim %>% filter(site=="B13"&year>=1986),aes(Date,vpd_anom_sigma_3mo)) + geom_bar(stat="identity") + theme_classic() +
-  xlab("Year") + ylab("Quarterly Standardized\nAnomalies") + ggtitle("Vapour Pressure Deficit Anomalies") +
-  stat_smooth() + theme(text=element_text(size=16))
-
-ggpubr::ggarrange(z3,z1,ncol=1,nrow=2,align="hv",labels="auto",common.legend=T)
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClim.StdAnom.Comparison.pdf",height=9,width=12)

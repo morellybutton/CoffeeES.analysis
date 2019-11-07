@@ -47,7 +47,33 @@ g6<-ggplot(d.F.combo,aes(Shrub.kg,yld.cv16)) + geom_point(aes(color=patcharea)) 
 
 ggpubr::ggarrange(g1,g2,g5,g3,g4,g6,ncol=3,nrow=2,common.legend=T)
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/YieldComparisons.pdf",height=8,width=8)
+rm(g1,g2,g5,g4,g6,g3)
 
+#plot yields over 3 years
+yld_summ <- d.F.new %>% group_by(year) %>% summarise(yld.kg=mean(Shrub.kg),sd=sd(Shrub.kg))
+sm<-aov(Shrub.kg~factor(year),data=d.F.new)
+summary(sm)
+TukeyHSD(sm)
+
+g1<-ggplot() + geom_point(data=d.F.new,aes(factor(year),Shrub.kg),color="light grey") + geom_line(data=d.F.new,aes(factor(year),Shrub.kg,group=Plot),color="light grey") +
+  theme(legend.position="none") + ylab("Median Shrub Yield per Farm [kg]") + xlab("Year") +
+  theme_classic() + geom_point(data=yld_summ,aes(x=factor(year),y=yld.kg),size=3) +
+  geom_errorbar(data=yld_summ,aes(x=factor(year),ymin=yld.kg-sd,ymax=yld.kg+sd),width=0.05,size=1) +
+  theme(text = element_text(size = 16))
+
+
+ggsave(g1,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmYieldComparisons.pdf",height=5,width=7)
+
+#identify different modalities of yield.
+#2014 is the highest, 2015 is second highest than 2016
+#2014 high, 2015 low and 2016 high
+#2014 low, 2015 high and 2016 low
+#all yields are low
+ggplot() + geom_point(data=d.F.new,aes(factor(year),Shrub.kg,color=factor(low.yield.bin))) + geom_line(data=d.F.new,aes(factor(year),Shrub.kg,group=Plot,color=factor(low.yield.bin))) +
+  theme(legend.position="none") + ylab("Median Shrub Yield per Farm [kg]") + xlab("Year") +
+  theme_classic() + geom_point(data=yld_summ,aes(x=factor(year),y=yld.kg),size=3) +
+  geom_errorbar(data=yld_summ,aes(x=factor(year),ymin=yld.kg-sd,ymax=yld.kg+sd),width=0.05,size=1) +
+  theme(text = element_text(size = 16))
 
 #calculate resistance and resilience values using Isbell et al (2015) Nature
 #resistance = Yn/abs(Ye-Yn)
@@ -60,6 +86,160 @@ d.F.new.15 <- left_join(d.F.new.15,d.F.combo %>% rename(Shrub.kg.14=Shrub.kg) %>
 d.F.new.15 <- d.F.new.15 %>% mutate(resist.15=Shrub.kg.14/abs(Shrub.kg.15-Shrub.kg.14),
                                     resist.16=Shrub.kg.14/abs(Shrub.kg.16-Shrub.kg.14),
                                     resilience=abs(Shrub.kg.15-Shrub.kg.14)/abs(Shrub.kg.16-Shrub.kg.14))
+write.csv(d.F.new.15,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceComparisons.csv")
+
+d.F.new.15 <- d.F.new.15 %>% mutate(group1=0,group2=0,group3=0) %>% 
+  mutate(group1=replace(group1,Shrub.kg.14>Shrub.kg.15&Shrub.kg.15>Shrub.kg.16,1),
+         group2=replace(group2,Shrub.kg.14>Shrub.kg.15&Shrub.kg.15<Shrub.kg.16,1),
+         group3=replace(group3,Shrub.kg.14<Shrub.kg.15&Shrub.kg.15>Shrub.kg.16,1))
+d.F.new <- left_join(d.F.new,d.F.new.15 %>% select(Plot,group1,group2,group3),by="Plot")
+write.csv(d.F.new,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceGroups.csv")
+
+yld_summ1 <- d.F.new %>% filter(group1==1&Plot!="H10") %>% group_by(year) %>% summarise(yld.kg=mean(Shrub.kg),sd=sd(Shrub.kg))
+sm1<-aov(Shrub.kg~factor(year),data=d.F.new %>% filter(group1==1&Plot!="H10"))
+summary(sm1)
+TukeyHSD(sm1)
+
+g2<-ggplot() + geom_point(data=d.F.new %>% filter(group1==1&Plot!="H10"),aes(factor(year),Shrub.kg),color="light grey") + 
+  geom_line(data=d.F.new %>% filter(group1==1&Plot!="H10"),aes(factor(year),Shrub.kg,group=Plot),color="light grey") +
+  theme(legend.position="none") + ylab("Shrub Yield [kg]") + xlab("Year") + ggtitle("Group 1") +
+  theme_classic() + geom_point(data=yld_summ1,aes(x=factor(year),y=yld.kg),size=3) +
+  geom_errorbar(data=yld_summ1,aes(x=factor(year),ymin=yld.kg-sd,ymax=yld.kg+sd),width=0.05,size=1) +
+  theme(text = element_text(size = 16))
+
+yld_summ2 <- d.F.new %>% filter(group2==1&Plot!="H10") %>% group_by(year) %>% summarise(yld.kg=mean(Shrub.kg),sd=sd(Shrub.kg))
+sm2<-aov(Shrub.kg~factor(year),data=d.F.new %>% filter(group2==1&Plot!="H10"))
+summary(sm2)
+TukeyHSD(sm2)
+
+g3<-ggplot() + geom_point(data=d.F.new %>% filter(group2==1&Plot!="H10"),aes(factor(year),Shrub.kg),color="light grey") + 
+  geom_line(data=d.F.new %>% filter(group2==1&Plot!="H10"),aes(factor(year),Shrub.kg,group=Plot),color="light grey") +
+  theme(legend.position="none") + ylab("Shrub Yield [kg]") + xlab("Year") + ggtitle("Group 2") +
+  theme_classic() + geom_point(data=yld_summ2,aes(x=factor(year),y=yld.kg),size=3) +
+  geom_errorbar(data=yld_summ2,aes(x=factor(year),ymin=yld.kg-sd,ymax=yld.kg+sd),width=0.05,size=1) +
+  theme(text = element_text(size = 16))
+
+yld_summ3 <- d.F.new %>% filter(group3==1&Plot!="H10") %>% group_by(year) %>% summarise(yld.kg=mean(Shrub.kg),sd=sd(Shrub.kg))
+sm3<-aov(Shrub.kg~factor(year),data=d.F.new %>% filter(group3==1&Plot!="H10"))
+summary(sm3)
+TukeyHSD(sm3)
+
+g4<-ggplot() + geom_point(data=d.F.new %>% filter(group3==1&Plot!="H10"),aes(factor(year),Shrub.kg),color="light grey") + 
+  geom_line(data=d.F.new %>% filter(group3==1&Plot!="H10"),aes(factor(year),Shrub.kg,group=Plot),color="light grey") +
+  theme(legend.position="none") + ylab("Shrub Yield [kg]") + xlab("Year") + ggtitle("Group 3") +
+  theme_classic() + geom_point(data=yld_summ3,aes(x=factor(year),y=yld.kg),size=3) +
+  geom_errorbar(data=yld_summ3,aes(x=factor(year),ymin=yld.kg-sd,ymax=yld.kg+sd),width=0.05,size=1) +
+  theme(text = element_text(size = 16))
+
+g5<-ggpubr::ggarrange(g2,g3,g4,ncol=1,nrow=3)
+ggpubr::ggarrange(g1,g5,ncol=2,align="v",widths=c(1.5,1))
+
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmYieldComparisons.wgroups.pdf",height=6,width=10)
+
+#plot resistance over time
+resist.mean<-d.F.new.15 %>% summarise(resist.15=mean(resist.15,na.rm=T),resist.16=mean(resist.16,na.rm=T))
+resist.sd<-d.F.new.15 %>% summarise(resist.15=sd(resist.15,na.rm=T),resist.16=sd(resist.16,na.rm=T))
+
+tmp<-tibble(t(resist.mean))
+colnames(tmp)<-"resist"
+tmp$year<-c(2015,2016)
+#tmp$conditions<-c("Heat","Drought")
+tmp$sd<-t(resist.sd)
+
+d.F.resist <- d.F.new.15 %>% select(Plot,year,resist.15,group1,group2,group3) %>% rename(resist=resist.15)
+tmp1 <- d.F.new.15 %>% select(Plot,resist.16,group1,group2,group3) %>% rename(resist=resist.16) %>% mutate(year=2016)
+d.F.resist<-bind_rows(d.F.resist,tmp1)
+
+tm<-aov(resist~factor(year),data=d.F.resist)
+summary(tm)
+TukeyHSD(tm)
+
+p1<-ggplot() + geom_point(data=d.F.resist,aes(factor(year),resist),color="light grey") + geom_line(data=d.F.resist,aes(factor(year),resist,group=Plot),color="light grey") +
+  theme_classic() + ylab("Resistance") + xlab("Climate Shock") + theme(text = element_text(size = 16)) +
+  geom_point(data=tmp,aes(factor(year),resist),size=3) + scale_colour_grey(start=0.9,end=0.7) +
+  geom_errorbar(data=tmp,aes(x=factor(year),ymax=resist+sd,ymin=resist-sd),width=0.05) +
+  geom_hline(yintercept=tmp %>% filter(year==2015) %>% pull(resist),linetype="dashed") +
+  scale_x_discrete(labels=c("2015" = "Hot Year", "2016" = "Dry Year"))
+
+ggsave(p1,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceComparisons.pdf",height=5,width=7)
+
+resist.mean1<-d.F.new.15 %>% filter(group1==1) %>% summarise(resist.15=mean(resist.15,na.rm=T),resist.16=mean(resist.16,na.rm=T))
+resist.sd1<-d.F.new.15 %>% filter(group1==1) %>% summarise(resist.15=sd(resist.15,na.rm=T),resist.16=sd(resist.16,na.rm=T))
+
+tmp2<-tibble(t(resist.mean1))
+colnames(tmp2)<-"resist"
+tmp2$year<-c(2015,2016)
+#tmp$conditions<-c("Heat","Drought")
+tmp2$sd<-t(resist.sd1)
+
+tm1<-aov(resist~factor(year),data=d.F.resist %>% filter(group1==1))
+summary(tm1)
+TukeyHSD(tm1)
+
+p2<-ggplot() + geom_point(data=d.F.resist %>% filter(group1==1),aes(factor(year),resist),color="light grey") + 
+  geom_line(data=d.F.resist %>% filter(group1==1),aes(factor(year),resist,group=Plot),color="light grey") +
+  theme_classic() + ylab("Resistance") + xlab("Climate Shock") + theme(text = element_text(size = 16)) +
+  ggtitle("Group 1") +
+  geom_point(data=tmp2,aes(factor(year),resist),size=3) + scale_colour_grey(start=0.9,end=0.7) +
+  geom_errorbar(data=tmp2,aes(x=factor(year),ymax=resist+sd,ymin=resist-sd),width=0.05) +
+  #geom_hline(yintercept=tmp2 %>% filter(year==2015) %>% pull(resist),linetype="dashed") +
+  scale_x_discrete(labels=c("2015" = "Hot Year", "2016" = "Dry Year"))
+
+resist.mean2<-d.F.new.15 %>% filter(group2==1) %>% summarise(resist.15=mean(resist.15,na.rm=T),resist.16=mean(resist.16,na.rm=T))
+resist.sd2<-d.F.new.15 %>% filter(group2==1) %>% summarise(resist.15=sd(resist.15,na.rm=T),resist.16=sd(resist.16,na.rm=T))
+
+tmp3<-tibble(t(resist.mean2))
+colnames(tmp3)<-"resist"
+tmp3$year<-c(2015,2016)
+#tmp$conditions<-c("Heat","Drought")
+tmp3$sd<-t(resist.sd2)
+
+tm2<-aov(resist~factor(year),data=d.F.resist %>% filter(group2==1))
+summary(tm2)
+TukeyHSD(tm2)
+
+p3<-ggplot() + geom_point(data=d.F.resist %>% filter(group2==1),aes(factor(year),resist),color="light grey") + 
+  geom_line(data=d.F.resist %>% filter(group2==1),aes(factor(year),resist,group=Plot),color="light grey") +
+  theme_classic() + ylab("Resistance") + xlab("Climate Shock") + theme(text = element_text(size = 16)) +
+  ggtitle("Group 2") +
+  geom_point(data=tmp3,aes(factor(year),resist),size=3) + scale_colour_grey(start=0.9,end=0.7) +
+  geom_errorbar(data=tmp3,aes(x=factor(year),ymax=resist+sd,ymin=resist-sd),width=0.05) +
+  #geom_hline(yintercept=tmp2 %>% filter(year==2015) %>% pull(resist),linetype="dashed") +
+  scale_x_discrete(labels=c("2015" = "Hot Year", "2016" = "Dry Year"))
+
+
+resist.mean3<-d.F.new.15 %>% filter(group3==1) %>% summarise(resist.15=mean(resist.15,na.rm=T),resist.16=mean(resist.16,na.rm=T))
+resist.sd3<-d.F.new.15 %>% filter(group3==1) %>% summarise(resist.15=sd(resist.15,na.rm=T),resist.16=sd(resist.16,na.rm=T))
+
+tmp4<-tibble(t(resist.mean3))
+colnames(tmp4)<-"resist"
+tmp4$year<-c(2015,2016)
+#tmp$conditions<-c("Heat","Drought")
+tmp4$sd<-t(resist.sd3)
+
+tm3<-aov(resist~factor(year),data=d.F.resist %>% filter(group3==1))
+summary(tm3)
+TukeyHSD(tm3)
+
+p4<-ggplot() + geom_point(data=d.F.resist %>% filter(group3==1),aes(factor(year),resist),color="light grey") + 
+  geom_line(data=d.F.resist %>% filter(group3==1),aes(factor(year),resist,group=Plot),color="light grey") +
+  theme_classic() + ylab("Resistance") + xlab("Climate Shock") + theme(text = element_text(size = 16)) +
+  ggtitle("Group 3") +
+  geom_point(data=tmp4,aes(factor(year),resist),size=3) + scale_colour_grey(start=0.9,end=0.7) +
+  geom_errorbar(data=tmp4,aes(x=factor(year),ymax=resist+sd,ymin=resist-sd),width=0.05) +
+  #geom_hline(yintercept=tmp2 %>% filter(year==2015) %>% pull(resist),linetype="dashed") +
+  scale_x_discrete(labels=c("2015" = "Hot Year", "2016" = "Dry Year"))
+
+p5<-ggpubr::ggarrange(p2,p3,p4,ncol=1,nrow=3)
+ggpubr::ggarrange(p1,p5,ncol=2,align="v",widths=c(1.5,1))
+
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceComparisons.wgroups.pdf",height=6,width=10)
+
+#check out high resistance farms
+test<-d.F.resist %>% filter(resist>3)
+tm3<-aov(resist~factor(year),data=d.F.resist)
+summary(tm3)
+
 library(arm)
 library(car)
 library(MuMIn)
@@ -503,30 +683,30 @@ z_g.14<-gather(z.14,key="patch",value="yld",-elevation)
 
 g1<-ggplot(z_g.14, aes( as.numeric(patch), elevation, z = yld)) +geom_raster(aes(fill=yld)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
-  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  scale_fill_viridis_c(limits=c(-0.5,1.0))+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
   labs(fill="Yield") + ggtitle("Shrub Yield\n(Normal Year)") + theme(text=element_text(size=16))
 g1
 #ggsave(paste0(getwd(),"/Analysis/ES/Modelled.yld14.elev.vs.patcharea.pdf"),width=8,height=7)
 
-tmp.rm<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_resilience.delta2.confint.csv"))
+#tmp.rm<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_resilience.delta2.confint.csv"))
 
-z.rm<-data.frame()
-for(i in 1:length(elev)){
-  for(j in 1:length(patch)){
-    z.rm[i,j] <- tmp.rm[tmp.rm$Comparison=="rescale(elevation)","full"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + tmp.rm[tmp.rm$Comparison=="rescale(patcharea)","full"]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]]) 
-  }
-}
-colnames(z.rm)<-patch
-z.rm$elevation<-elev
+#z.rm<-data.frame()
+#for(i in 1:length(elev)){
+#  for(j in 1:length(patch)){
+#    z.rm[i,j] <- tmp.rm[tmp.rm$Comparison=="rescale(elevation)","full"]*(elev[i]-z.elev[[2]])/(2*z.elev[[3]]) + tmp.rm[tmp.rm$Comparison=="rescale(patcharea)","full"]*(patch[j]-z.patch[[2]])/(2*z.patch[[3]]) 
+#  }
+#}
+#colnames(z.rm)<-patch
+#z.rm$elevation<-elev
 
-z_g.rm<-gather(z.rm,key="patch",value="res",-elevation)
+#z_g.rm<-gather(z.rm,key="patch",value="res",-elevation)
 
-g2<-ggplot(z_g.rm, aes( as.numeric(patch), elevation, z = res)) +geom_raster(aes(fill=res)) +
+#g2<-ggplot(z_g.rm, aes( as.numeric(patch), elevation, z = res)) +geom_raster(aes(fill=res)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
-  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Resilience") + ggtitle("Climate\nResilience") + theme(text=element_text(size=16))
-g2
-ggsave(paste0(getwd(),"/Analysis/ES/Modelled.resilience.elev.vs.patcharea.pdf"),width=8,height=7)
+#  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+#  labs(fill="Resilience") + ggtitle("Climate\nResilience") + theme(text=element_text(size=16))
+#g2
+#ggsave(paste0(getwd(),"/Analysis/ES/Modelled.resilience.elev.vs.patcharea.pdf"),width=8,height=7)
 
 #resistance 2015
 tmp.sm<-read.csv(paste0(getwd(),"/Analysis/ES/Model.Average_resistance15.delta2.confint.csv"))
@@ -542,11 +722,11 @@ z.sm$elevation<-elev
 
 z_g.sm<-gather(z.sm,key="patch",value="resist",-elevation)
 
-g3<-ggplot(z_g.sm, aes( as.numeric(patch), elevation, z = resist)) +geom_raster(aes(fill=resist)) +
+g2<-ggplot(z_g.sm, aes( as.numeric(patch), elevation, z = resist)) +geom_raster(aes(fill=resist)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
-  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Resistance") + ggtitle("Climate Shock\nResistance") + theme(text=element_text(size=16))
-g3
+  scale_fill_viridis_c(limits=c(-1,1))+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  labs(fill="Resistance") + ggtitle("Resistance\n(Hot Year)") + theme(text=element_text(size=16))
+g2
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.resistence15.elev.vs.patcharea.pdf"),width=8,height=7)
 
 #resistance 2016
@@ -564,11 +744,11 @@ z.tm$elevation<-elev
 
 z_g.tm<-gather(z.tm,key="patch",value="resist",-elevation)
 
-g3b<-ggplot(z_g.tm, aes( as.numeric(patch), elevation, z = resist)) +geom_raster(aes(fill=resist)) +
+g3<-ggplot(z_g.tm, aes( as.numeric(patch), elevation, z = resist)) +geom_raster(aes(fill=resist)) +
   #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
-  scale_fill_viridis_c()+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Resistance") + ggtitle("Farm Resistance (2016)") + theme(text=element_text(size=16))
-g3b
+  scale_fill_viridis_c(limits=c(-5,3))+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  labs(fill="Resistance") + ggtitle("Resistance\n(Dry Year)") + theme(text=element_text(size=16))
+g3
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.resistence16.elev.vs.patcharea.pdf"),width=8,height=7)
 
 #models for basal area leguminous trees and shade diversity
@@ -591,27 +771,27 @@ s.14$legume<-legume
 s_g.14<-gather(s.14,key="diversity",value="yld",-legume)
 
 g4<-ggplot(s_g.14, aes( as.numeric(diversity), legume, z = yld)) +geom_raster(aes(fill=yld)) +
-  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  scale_fill_viridis_c(limits=c(-0.5,1.0)) + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
   labs(fill="Yield") + ggtitle("") + theme(text=element_text(size=16))
 g4
 
 #do for resilience
-s.rm<-data.frame()
-for(i in 1:length(legume)){
-  for(j in 1:length(diversity)){
-    s.rm[i,j] <- tmp.rm[tmp.rm$Comparison=="rescale(BA.legume)","full"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.rm[tmp.rm$Comparison=="rescale(Shannon.i)","full"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) +
-      tmp.rm[tmp.rm$Comparison=="rescale(BA.legume):rescale(Shannon.i)","full"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
-  }
-}
-colnames(s.rm)<-diversity
-s.rm$legume<-legume
+#s.rm<-data.frame()
+#for(i in 1:length(legume)){
+#  for(j in 1:length(diversity)){
+#    s.rm[i,j] <- tmp.rm[tmp.rm$Comparison=="rescale(BA.legume)","full"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]]) + tmp.rm[tmp.rm$Comparison=="rescale(Shannon.i)","full"]*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]]) +
+#      tmp.rm[tmp.rm$Comparison=="rescale(BA.legume):rescale(Shannon.i)","full"]*(legume[i]-z.legume[[2]])/(2*z.legume[[3]])*(diversity[j]-z.diversity[[2]])/(2*z.diversity[[3]])
+#  }
+#}
+#colnames(s.rm)<-diversity
+#s.rm$legume<-legume
 
-s_g.rm<-gather(s.rm,key="diversity",value="res",-legume)
+#s_g.rm<-gather(s.rm,key="diversity",value="res",-legume)
 
-g5<-ggplot(s_g.rm, aes( as.numeric(diversity), legume, z = res)) +geom_raster(aes(fill=res)) +
-  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
-  labs(fill="Resilience") + ggtitle("") + theme(text=element_text(size=16))
-g5
+#g5<-ggplot(s_g.rm, aes( as.numeric(diversity), legume, z = res)) +geom_raster(aes(fill=res)) +
+#  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+#  labs(fill="Resilience") + ggtitle("") + theme(text=element_text(size=16))
+#g5
 
 #do for resistance 2015
 s.sm<-data.frame()
@@ -625,10 +805,10 @@ s.sm$legume<-legume
 
 s_g.sm<-gather(s.sm,key="diversity",value="resist",-legume)
 
-g6<-ggplot(s_g.sm, aes( as.numeric(diversity), legume, z = resist)) +geom_raster(aes(fill=resist)) +
-  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+g5<-ggplot(s_g.sm, aes( as.numeric(diversity), legume, z = resist)) +geom_raster(aes(fill=resist)) +
+  scale_fill_viridis_c(limits=c(-1,1)) + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
   labs(fill="Resistance") + ggtitle("") + theme(text=element_text(size=16))
-g6
+g5
 
 #do for resistance 2016
 s.tm<-data.frame()
@@ -643,16 +823,254 @@ s.tm$legume<-legume
 
 s_g.tm<-gather(s.tm,key="diversity",value="resist",-legume)
 
-g6b<-ggplot(s_g.tm, aes( as.numeric(diversity), legume, z = resist)) +geom_raster(aes(fill=resist)) +
-  scale_fill_viridis_c() + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+g6<-ggplot(s_g.tm, aes( as.numeric(diversity), legume, z = resist)) +geom_raster(aes(fill=resist)) +
+  scale_fill_viridis_c(limits=c(-5,3)) + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
   labs(fill="Resistance") + ggtitle("") + theme(text=element_text(size=16))
-g6b
+g6
 
 g7<-ggpubr::ggarrange(g1,g4,ncol=1,nrow=2,common.legend = T,legend="right",font.label = list(size = 18),heights=c(1.1,1))
 g8<-ggpubr::ggarrange(g2,g5,ncol=1,nrow=2,common.legend = T,legend="right",font.label = list(size = 18),heights=c(1.1,1))
 g9<-ggpubr::ggarrange(g3,g6,ncol=1,nrow=2,common.legend = T,legend="right",font.label = list(size = 18),heights=c(1.1,1))
+#g8<-ggpubr::ggarrange(g2,g3,g5,g6,ncol=2,nrow=2,common.legend = T,legend="right",font.label = list(size = 18),heights=c(1.1,1))
 
 ggpubr::ggarrange(g7,g8,g9,nrow=1,ncol=3,align="hv",widths=c(1,1.1,1.1))
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/Model.yld.resilience.resistance.landmanagement.pdf",height=6,width=12)
 
+#modeling drivers of group1, group2, group3
+d.F.new <- read.csv("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceGroups.csv")
+d.F.new.1<-d.F.new %>% filter(year==2014&!is.na(group1))
 
+library(arm)
+library(MuMIn)
+#group1
+m1<-glm(group1~rescale(elevation)*rescale(patcharea) + rescale(BA.legume)*rescale(Shannon.i),data=d.F.new.1,
+        family=quasibinomial(link="logit"))
+summary(m1)
+
+m1b<-glm(group1~rescale(elevation) + rescale(patcharea) + rescale(BA.legume)*rescale(Shannon.i),data=d.F.new.1,
+        family=quasibinomial(link="logit"))
+summary(m1b)
+
+model_global <- glm(group1~elevation*patcharea + BA.legume*Shannon.i,data=d.F.new.1,
+                     family=quasibinomial(link="logit"))
+model_1 <-  glm(group1~elevation+patcharea + BA.legume*Shannon.i,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_2 <-  glm(group1~BA.legume*Shannon.i,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_3 <-  glm(group1~BA.legume+Shannon.i,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_4 <-  glm(group1~elevation*patcharea,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_5 <-  glm(group1~elevation + patcharea,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+
+model_null <-  glm(group1~1, data=d.F.new.1,
+                   family=quasibinomial(link="logit"))
+
+anova(model_null,model_global, model_1,model_2,model_3,model_4,model_5, test="Chisq")
+
+anova(model_global, model_2,model_3,model_4, test="Chisq")
+#This calculates R2
+1-model_global$deviance/model_global$null.deviance
+
+#group2
+m2<-glm(group2~rescale(elevation)*rescale(patcharea) + rescale(BA.legume)*rescale(Shannon.i),data=d.F.new.1,
+        family=quasibinomial(link="logit"))
+summary(m2)
+
+m2b<-glm(group2~rescale(elevation)+rescale(patcharea) + rescale(BA.legume)*rescale(Shannon.i),data=d.F.new.1,
+        family=quasibinomial(link="logit"))
+summary(m2b)
+
+model_globalb <- glm(group2~elevation*patcharea + BA.legume*Shannon.i,data=d.F.new.1,
+                    family=quasibinomial(link="logit"))
+model_1b <-  glm(group2~elevation+patcharea + BA.legume*Shannon.i,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_2b <-  glm(group2~BA.legume*Shannon.i,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_3b <-  glm(group2~BA.legume+Shannon.i,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_4b <-  glm(group2~elevation*patcharea,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+model_5b <-  glm(group2~elevation + patcharea,data=d.F.new.1,
+                family=quasibinomial(link="logit"))
+
+model_nullb <-  glm(group2~1, data=d.F.new.1,
+                   family=quasibinomial(link="logit"))
+
+anova(model_nullb,model_globalb, model_1b,model_2b,model_3b,model_4b,model_5b, test="Chisq")
+
+anova(model_global, model_2,model_3,model_4, test="Chisq")
+#This calculates R2
+1-model_globalb$deviance/model_globalb$null.deviance
+
+#group3
+m3<-glm(group3~rescale(elevation)*rescale(patcharea) + rescale(BA.legume)*rescale(Shannon.i),data=d.F.new.1,
+        family=quasibinomial(link="logit"))
+summary(m3)
+
+m3b<-glm(group3~rescale(elevation)*rescale(patcharea) +rescale(Shannon.i),data=d.F.new.1,
+         family=quasibinomial(link="logit"))
+summary(m3b)
+
+model_globalc <- glm(group3~elevation*patcharea + BA.legume*Shannon.i,data=d.F.new.1,
+                     family=quasibinomial(link="logit"))
+model_1c <-  glm(group3~elevation+patcharea + BA.legume*Shannon.i,data=d.F.new.1,
+                 family=quasibinomial(link="logit"))
+model_2c <-  glm(group3~BA.legume*Shannon.i,data=d.F.new.1,
+                 family=quasibinomial(link="logit"))
+model_3c <-  glm(group3~BA.legume+Shannon.i,data=d.F.new.1,
+                 family=quasibinomial(link="logit"))
+model_4c <-  glm(group3~elevation*patcharea,data=d.F.new.1,
+                 family=quasibinomial(link="logit"))
+model_5c <-  glm(group3~elevation + patcharea,data=d.F.new.1,
+                 family=quasibinomial(link="logit"))
+
+model_nullc <-  glm(group3~1, data=d.F.new.1,
+                    family=quasibinomial(link="logit"))
+
+anova(model_nullc,model_globalc, model_1c,model_2c,model_3c,model_4c,model_5c, test="Chisq")
+
+#This calculates R2
+1-model_globalc$deviance/model_globalc$null.deviance
+
+#landscape
+patch<-seq(as.integer(min(d.F.new.1$patcharea)),as.integer(max(d.F.new.1$patcharea)),by=15)
+#z.patch<-attributes(scale(d.F.new.1$patcharea))
+elev<-seq(as.integer(min(d.F.new.1$elevation)),as.integer(max(d.F.new.1$elevation)),by=4)
+#z.elev<-attributes(scale(d.F.new.1$elevation))
+m_legume=mean(d.F.new.1$BA.legume)
+m_diversity=mean(d.F.new.1$Shannon.i)
+
+z.1<-data.frame()
+for(i in 1:length(elev)){
+  for(j in 1:length(patch)){
+    pi.hat = predict.glm(model_global, newdata=data.frame(patcharea=patch[j],
+                                         elevation=elev[i],
+                                         BA.legume=m_legume,Shannon.i=m_diversity), type="response", se.fit=TRUE)
+    z.1[i,j]<-pi.hat$fit  
+    }
+}
+colnames(z.1)<-patch
+z.1$elevation<-elev
+
+z_g.1<-gather(z.1,key="patch",value="prob",-elevation)
+
+b1<-ggplot(z_g.1, aes( as.numeric(patch), elevation, z = prob)) +geom_raster(aes(fill=prob)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c(limits=c(0,1),breaks=seq(0,1, by=0.5))+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  labs(fill="Probability") + ggtitle("Group 1") + theme(text=element_text(size=16))
+b1
+
+legume<-seq(as.integer(min(d.F.new.1$BA.legume)),as.integer(max(d.F.new.1$BA.legume)),by=0.30)
+diversity<-seq(as.integer(min(d.F.new.1$Shannon.i)),as.integer(max(d.F.new.1$Shannon.i)),by=0.04)
+#z.legume<-attributes(scale(d.F.new.1$BA.legume))
+#z.diversity<-attributes(scale(d.F.new.1$Shannon.i))
+m_patch=mean(d.F.new.1$patcharea)
+m_elev=mean(d.F.new.1$elevation)
+
+#do for group1
+s.1<-data.frame()
+for(i in 1:length(legume)){
+  for(j in 1:length(diversity)){
+    pi.hat = predict.glm(model_global, newdata=data.frame(patcharea=m_patch,
+                                                 elevation=m_elev,
+                                                 BA.legume=legume[i],
+                                                 Shannon.i=diversity[j]), type="response", se.fit=TRUE)
+    s.1[i,j]<-pi.hat$fit  
+    }
+}
+colnames(s.1)<-diversity
+s.1$legume<-legume
+
+s_g.1<-gather(s.1,key="diversity",value="prob",-legume)
+
+b2<-ggplot(s_g.1, aes( as.numeric(diversity), legume, z = prob)) +geom_raster(aes(fill=prob)) +
+  scale_fill_viridis_c(limits=c(0,1),breaks=seq(0,1, by=0.5)) + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  labs(fill="Probability") + ggtitle("") + theme(text=element_text(size=16))
+b2
+
+#group 2
+z.2<-data.frame()
+for(i in 1:length(elev)){
+  for(j in 1:length(patch)){
+    pi.hat = predict.glm(model_globalb, newdata=data.frame(patcharea=patch[j],
+                                                          elevation=elev[i],
+                                                          BA.legume=m_legume,Shannon.i=m_diversity), type="response", se.fit=TRUE)
+    z.2[i,j]<-pi.hat$fit  
+  }
+}
+colnames(z.2)<-patch
+z.2$elevation<-elev
+
+z_g.2<-gather(z.2,key="patch",value="prob",-elevation)
+
+b3<-ggplot(z_g.2, aes( as.numeric(patch), elevation, z = prob)) +geom_raster(aes(fill=prob)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c(limits=c(0,1),breaks=seq(0,1, by=0.5))+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  labs(fill="Probability") + ggtitle("Group 2") + theme(text=element_text(size=16))
+b3
+
+s.2<-data.frame()
+for(i in 1:length(legume)){
+  for(j in 1:length(diversity)){
+    pi.hat = predict.glm(model_globalb, newdata=data.frame(patcharea=m_patch,
+                                                          elevation=m_elev,
+                                                          BA.legume=legume[i],
+                                                          Shannon.i=diversity[j]), type="response", se.fit=TRUE)
+    s.2[i,j]<-pi.hat$fit  
+  }
+}
+colnames(s.2)<-diversity
+s.2$legume<-legume
+
+s_g.2<-gather(s.2,key="diversity",value="prob",-legume)
+
+b4<-ggplot(s_g.2, aes( as.numeric(diversity), legume, z = prob)) +geom_raster(aes(fill=prob)) +
+  scale_fill_viridis_c(limits=c(0,1),breaks=seq(0,1, by=0.5)) + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  labs(fill="Probability") + ggtitle("") + theme(text=element_text(size=16))
+b4
+
+#group 3
+z.3<-data.frame()
+for(i in 1:length(elev)){
+  for(j in 1:length(patch)){
+    pi.hat = predict.glm(model_globalc, newdata=data.frame(patcharea=patch[j],
+                                                           elevation=elev[i],
+                                                           BA.legume=m_legume,Shannon.i=m_diversity), type="response", se.fit=TRUE)
+    z.3[i,j]<-pi.hat$fit  
+  }
+}
+colnames(z.3)<-patch
+z.3$elevation<-elev
+
+z_g.3<-gather(z.3,key="patch",value="prob",-elevation)
+
+b5<-ggplot(z_g.3, aes( as.numeric(patch), elevation, z = prob)) +geom_raster(aes(fill=prob)) +
+  #scale_fill_gradientn(colours = rev(terrain.colors(20))) + 
+  scale_fill_viridis_c(limits=c(0,1),breaks=seq(0,1, by=0.5))+ theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  labs(fill="Probability") + ggtitle("Group 3") + theme(text=element_text(size=16))
+b5
+
+s.3<-data.frame()
+for(i in 1:length(legume)){
+  for(j in 1:length(diversity)){
+    pi.hat = predict.glm(model_globalc, newdata=data.frame(patcharea=m_patch,
+                                                           elevation=m_elev,
+                                                           BA.legume=legume[i],
+                                                           Shannon.i=diversity[j]), type="response", se.fit=TRUE)
+    s.3[i,j]<-pi.hat$fit  
+  }
+}
+colnames(s.3)<-diversity
+s.3$legume<-legume
+
+s_g.3<-gather(s.3,key="diversity",value="prob",-legume)
+
+b6<-ggplot(s_g.3, aes( as.numeric(diversity), legume, z = prob)) +geom_raster(aes(fill=prob)) +
+  scale_fill_viridis_c(limits=c(0,1),breaks=seq(0,1, by=0.5)) + theme_classic() + ylab("Basal Area\nLeguminous Trees [m2]") + xlab("Shade Diversity [H]")+
+  labs(fill="Probability") + ggtitle("") + theme(text=element_text(size=16))
+b6
+
+ggpubr::ggarrange(b1,b3,b5,b2,b4,b6,ncol=3,nrow=2,common.legend=T,legend="right")
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/GroupComparisons.pdf",height=7,width=12)
