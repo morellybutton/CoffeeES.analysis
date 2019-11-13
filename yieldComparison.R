@@ -64,6 +64,26 @@ g1<-ggplot() + geom_point(data=d.F.new,aes(factor(year),Shrub.kg),color="light g
 
 ggsave(g1,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmYieldComparisons.pdf",height=5,width=7)
 
+#do again for farm yield
+d.F.new <- d.F.new %>% group_by(Plot,year) %>% mutate(yield.ha=Shrub.kg*density) %>% ungroup()
+
+yld.ha_summ <- d.F.new %>% group_by(year) %>% summarise(yield.ha=mean(yield.ha))
+yld.ha_summ.sd= d.F.new %>% group_by(year) %>% summarise(sd=sd(yield.ha))
+yld.ha_summ <- left_join(yld.ha_summ,yld.ha_summ.sd,by="year")
+sm1<-aov(yield.ha~factor(year),data=d.F.new)
+summary(sm1)
+TukeyHSD(sm1)
+
+g1b<-ggplot() + geom_point(data=d.F.new,aes(factor(year),yield.ha),color="light grey") + 
+  geom_line(data=d.F.new,aes(factor(year),yield.ha,group=Plot),color="light grey") +
+  theme(legend.position="none") + ylab("Median Yield per Farm [kg/ha]") + xlab("Year") +
+  theme_classic() + geom_point(data=yld.ha_summ,aes(x=factor(year),y=yield.ha),size=3) +
+  geom_errorbar(data=yld.ha_summ,aes(x=factor(year),ymin=yield.ha-sd,ymax=yield.ha+sd),width=0.05,size=1) +
+  theme(text = element_text(size = 16))
+
+ggpubr::ggarrange(g1,g1b,ncol=2,nrow=1)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmYield.ha.Comparisons.pdf",height=5,width=12)
+
 #identify different modalities of yield.
 #2014 is the highest, 2015 is second highest than 2016
 #2014 high, 2015 low and 2016 high
@@ -82,9 +102,12 @@ ggplot() + geom_point(data=d.F.new,aes(factor(year),Shrub.kg,color=factor(low.yi
 #where Y[e+1] = productivity during the year after a climate event.
 
 d.F.new.15 <- left_join(d.F.new.15,d.F.combo %>% rename(Shrub.kg.14=Shrub.kg) %>% select(Plot,Shrub.kg.14,Shrub.kg.16),by="Plot")
+d.F.new.15 <- d.F.new.15 %>% group_by(Plot,year) %>% mutate(yld.ha.14=Shrub.kg.14*density,yld.ha.15=Shrub.kg.15*density,yld.ha.16=Shrub.kg.16*density) %>% ungroup()
 
 d.F.new.15 <- d.F.new.15 %>% mutate(resist.15=Shrub.kg.14/abs(Shrub.kg.15-Shrub.kg.14),
                                     resist.16=Shrub.kg.14/abs(Shrub.kg.16-Shrub.kg.14),
+                                    resist.15.ha=yld.ha.14/abs(yld.ha.15-yld.ha.14),
+                                    resist.16.ha=yld.ha.14/abs(yld.ha.16-yld.ha.14),
                                     resilience=abs(Shrub.kg.15-Shrub.kg.14)/abs(Shrub.kg.16-Shrub.kg.14))
 write.csv(d.F.new.15,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceComparisons.csv")
 
@@ -138,7 +161,9 @@ ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/La
 
 #plot resistance over time
 resist.mean<-d.F.new.15 %>% summarise(resist.15=mean(resist.15,na.rm=T),resist.16=mean(resist.16,na.rm=T))
+                                      #resist.15.ha=mean(resist.15.ha,na.rm=T),resist.16.ha=mean(resist.16.ha,na.rm=T))
 resist.sd<-d.F.new.15 %>% summarise(resist.15=sd(resist.15,na.rm=T),resist.16=sd(resist.16,na.rm=T))
+                                    #resist.15.ha=sd(resist.15.ha,na.rm=T),resist.16.ha=sd(resist.16.ha,na.rm=T))
 
 tmp<-tibble(t(resist.mean))
 colnames(tmp)<-"resist"
@@ -161,7 +186,7 @@ p1<-ggplot() + geom_point(data=d.F.resist,aes(factor(year),resist),color="light 
   geom_hline(yintercept=tmp %>% filter(year==2015) %>% pull(resist),linetype="dashed") +
   scale_x_discrete(labels=c("2015" = "Hot Year", "2016" = "Dry Year"))
 
-ggsave(p1,"/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceComparisons.pdf",height=5,width=7)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/FarmResistanceComparisons.pdf",height=5,width=7)
 
 resist.mean1<-d.F.new.15 %>% filter(group1==1) %>% summarise(resist.15=mean(resist.15,na.rm=T),resist.16=mean(resist.16,na.rm=T))
 resist.sd1<-d.F.new.15 %>% filter(group1==1) %>% summarise(resist.15=sd(resist.15,na.rm=T),resist.16=sd(resist.16,na.rm=T))
@@ -492,6 +517,33 @@ ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/La
 
 p1<-g1+coord_flip()+  xlab("")
 
+#Yield model for 2014
+tmp.14<-read.csv(paste0(getwd(),"/Analysis/ES/Model_yld14.delta2.v4.confint.csv"))
+#tmp.14<-tmp.14[!is.na(tmp.14$full),]
+
+#for delta 2
+tmp.14$Comparison<-factor(tmp.14$Comparison,levels=tmp.14[order(tmp.14$pvalue,decreasing=T),"Comparison"],
+                          labels=c("Basal Area of\nLeguminous Trees","Patch Area","BA Legume:\nShade Diversity","Shade Diversity","Elevation","(Intercept)"))
+
+#order by importance
+tmp.14<-tmp.14 %>% filter(Comparison!="(Intercept)")
+
+#add significance column
+tmp.14$sig<-1
+tmp.14<-tmp.14 %>% mutate(sig=replace(sig,Comparison=="Elevation"|Comparison=="Shade Diversity"|Comparison=="BA Legume:\nShade Diversity"|Comparison=="Patch Area",0))
+
+g1<-ggplot(tmp.14, aes(x = Comparison, y = Coefficients, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2,aes(color=factor(sig))) + 
+  geom_point(shape=15,size=5,aes(color=factor(sig)))+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Shrub Yield\n(Normal Year)")+
+  xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() + scale_color_grey() +
+  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="none")
+
+g1+coord_flip()
+ggsave(paste0(getwd(),"/Analysis/ES/Model_results_yld14.v4.pdf"),height=6,width=6)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/AnalysisFigures/Model_results_yld14.v4.pdf",height=6,width=6)
+
+p1<-g1+coord_flip()
+
 
 #Resistence 2015
 topmodels.avg.sm<-model.avg(cand.set.sm) 
@@ -527,7 +579,7 @@ tmp.sm<-tmp.sm %>% mutate(sig=replace(sig,Comparison=="Basal Area of\nLeguminous
 
 g2<-ggplot(tmp.sm, aes(x = Comparison, y = full, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2,aes(color=factor(sig))) + 
   geom_point(shape=15,size=5,aes(color=factor(sig)))+
-  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Farm Resistance\n(2015)")+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Farm Resistance\n(Hot Year)")+
   xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() + scale_color_grey() +
   theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="none")
 
@@ -571,7 +623,7 @@ tmp.tm<-tmp.tm %>% mutate(sig=replace(sig,Comparison=="BA Legume:\nShade Diversi
 
 g3<-ggplot(tmp.tm, aes(x = Comparison, y = full, ymin = Lower.CL, ymax = Upper.CL)) + geom_errorbar(width=0.2,aes(color=factor(sig))) + 
   geom_point(shape=15,size=5,aes(color=factor(sig)))+
-  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Farm Resistance\n(2016)")+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Farm Resistance\n(Dry Year)")+
   xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() + scale_color_grey() +
   theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="none")
 
@@ -582,8 +634,8 @@ ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/La
 p3<-g3+coord_flip()+  xlab("")
 
 ggpubr::ggarrange(p1,p2,p3,ncol=3,nrow=1)
-ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_resil.resist_combined.pdf"),height=6,width=18)
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/AnalysisFigures/Model_averaged_resil.resist_combined.pdf",height=6,width=18)
+#ggsave(paste0(getwd(),"/Analysis/ES/Model_averaged_resil.resist_combined.pdf"),height=6,width=18)
+#ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/AnalysisFigures/Model_averaged_resil.resist_combined.pdf",height=6,width=18)
 
 #test validity of resilience model
 tmp1$resilience.pred<-predict(topmodels.avg.rm,type="response")
@@ -659,6 +711,9 @@ p3.4<-ggpubr::ggarrange(p3.1,p3.2,p3.3,ncol=2,nrow=2,labels="auto")
 ggpubr::ggarrange(p3,p3.4,ncol=2,nrow=1)
 ggsave(paste0(getwd(),"/Analysis/ES/Modelled.resistance16.allgraphs.pdf"),width=12,height=6)
 ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/AnalysisFigures/Modelled.resistance16.allgraphs.pdf",width=12,height=6)
+
+ggpubr::ggarrange(p1,p2,p3,ncol=3,nrow=1)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/Modelled.yield&resistance.pdf",width=15,height=6)
 
 
 #3D figure of patcharea area and elevation

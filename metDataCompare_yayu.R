@@ -332,7 +332,7 @@ ggarrange(g1,g2,ncol=1,nrow=2,heights=c(1,3))
 ggsave(paste0(getwd(),"/Analysis/ElNino/TerraClim.MaxTComparison.pdf"))
 
 #combining satellite and ground measurements for comparison
-sat_anom<-read_csv(paste0(getwd(),"/Analysis/ElNino/terraclim_anomalies.csv"))
+sat_anom<-read_csv(paste0(getwd(),"/Analysis/ElNino/era5_anomalies.csv"))
 
 met_ppt<-read_csv(paste0(getwd(),"/MetData/ECO_12_monthlyppt.csv"))
 met_summ<-read_csv(paste0(getwd(),"/MetData/ECO_12_summary.csv"))
@@ -340,9 +340,9 @@ met_summ$month <- as.Date(paste(year(met_summ$day),month(met_summ$day),"01",sep=
 met_comp <- met_summ %>% group_by(month) %>% summarise(max_temp=mean(Tmax,na.rm=T),min_temp=mean(Tmin,na.rm=T),vpd=mean(VPDmax,na.rm=T))
 
 met_comp<-met_comp %>% rename(Date=month,g.max_temp=max_temp,g.min_temp=min_temp,g.vpd=vpd)
-met_comp<-left_join(met_comp,sat_anom %>% filter(site=="B19") %>% select(Date,vpd,tmax),by="Date")
+met_comp<-left_join(met_comp,sat_anom %>% filter(Plot=="B19") %>% select(Date,vpd,tmax),by="Date")
 met_ppt<-met_ppt %>% rename(Date=month)
-met_ppt<-left_join(met_ppt,sat_anom %>% filter(site=="B19") %>% select(Date,ppt),by="Date")
+met_ppt<-left_join(met_ppt,sat_anom %>% filter(Plot=="B19") %>% select(Date,ppt),by="Date")
 
 #plot the measurements
 lm_eqn<-lm(tmax~g.max_temp,data=met_comp)
@@ -366,5 +366,5 @@ g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,ppt)) + theme_classic() + ylab("T
   theme(text=element_text(size=16)) + geom_abline(slope=1,intercept=0,linetype="dashed")
 
 ggpubr::ggarrange(g1,g4,ncol=2,nrow=1)
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/TerraClimvsGroundMeasures.pdf",height=5,width=10)
+ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ERA5vsGroundMeasures.pdf",height=5,width=10)
 
