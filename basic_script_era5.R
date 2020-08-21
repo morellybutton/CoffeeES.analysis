@@ -4,7 +4,7 @@ options(mc.cores = parallel::detectCores()-1)
 library(RcppRoll); library(visreg);
 library(plantecophys)
 
-setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
+setwd("/Users/AMOREL001/Google Drive/Research/Africa/ECOLIMITS1/ECOLIMITS2019/Yayu/")
 
 # Functions ---------------------------------------------------------------
 #taken from FAO (http://www.fao.org/3/X0490E/x0490e07.htm) and originally 
@@ -91,15 +91,17 @@ clim <- left_join(clim,vpd, by=c("Plot","Date","month","year"))
 ppt <- read_csv(paste0(getwd(),"/Analysis/ElNino/ERA5_PPT_YAYU.csv")) %>% 
   select(Plot,Date,mean) %>% 
   mutate(Date=as.Date(Date,format="%d/%m/%Y")) %>% mutate(year=year(Date),month=month(Date)) %>%
-  mutate(ppt=mean*1000) %>% select(-mean)
+  mutate(ppt=mean*1000) %>% mutate(wd=ppt-100) %>% mutate(wd=replace(wd,wd>0,0)) %>% 
+  select(-mean)
   #gather(key="Plot",value="ppt",-Date,-year,-month)
 tmp <- ppt %>% filter(year>=1980 & year <= 2017) %>% 
   group_by(Plot,month) %>% 
-  summarize(u_precip = mean(ppt, na.rm=T))
+  summarize(u_precip = mean(ppt, na.rm=T),
+            u_wd = mean(wd,na.rm=T))
 ppt <- left_join(ppt,tmp,by=c("Plot","month"))
 
 clim <- left_join(clim,ppt, by=c("Plot","Date","month","year"))
-clim <- clim %>% mutate(tmean_anom = tmean-u_tmean,vpd_anom = vpd-u_vpd,precip_anom = ppt-u_precip) 
+clim <- clim %>% mutate(tmean_anom = tmean-u_tmean,vpd_anom = vpd-u_vpd,precip_anom = ppt-u_precip,wd_anom=wd-u_wd)
 
 tmp <- clim %>% filter(year>=1980 & year <= 2016) %>% 
   group_by(Plot, month) %>% 
@@ -107,7 +109,8 @@ tmp <- clim %>% filter(year>=1980 & year <= 2016) %>%
             tmean_sigma = sd(tmean, na.rm=T), 
             precip_sigma = sd(ppt, na.rm=T),
             mx_tmax_sigma = sd(mx_tmax, na.rm=T),
-            tmax_sigma=sd(tmax,na.rm=T))
+            tmax_sigma=sd(tmax,na.rm=T),
+            wd_sigma=sd(wd,na.rm=T))
 clim <- left_join(clim, tmp, by=c('Plot','month'))
 
 clim <- clim %>% 
@@ -121,13 +124,15 @@ clim <- clim %>%
   mutate(tmax_anom_sigma = tmax_anom/tmax_sigma,
          vpd_anom_sigma = vpd_anom/vpd_sigma, 
          precip_anom_sigma = precip_anom/precip_sigma,
-         tmean_anom_sigma = tmean_anom/tmean_sigma)
+         tmean_anom_sigma = tmean_anom/tmean_sigma,
+         wd_anom_sigma = wd_anom/wd_sigma)
          #pet_anom_sigma = pet_anom/pet_sigma)
 clim <- clim %>% group_by(Plot) %>% arrange(Date) %>% 
   mutate(tmax_anom_sigma_3mo = roll_meanr(tmax_anom_sigma, n=3),
          vpd_anom_sigma_3mo = roll_meanr(vpd_anom_sigma, n=3),
          precip_anom_sigma_3mo = roll_meanr(precip_anom_sigma, n=3),
-         tmean_anom_sigma_3mo = roll_meanr(tmean_anom_sigma, n=3)) %>% 
+         tmean_anom_sigma_3mo = roll_meanr(tmean_anom_sigma, n=3),
+         wd_anom_sigma_3mo = roll_meanr(wd_anom_sigma, n=3)) %>% 
          #pet_anom_sigma_3mo = roll_meanr(pet_anom_sigma, n=3)) %>% 
   ungroup()
 
