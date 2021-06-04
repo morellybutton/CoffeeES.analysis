@@ -493,347 +493,22 @@ g1+coord_flip()
 ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldglmgaussloglink.tiff"),height=8,width=9)
 
 
-
-######################
-####Yield Resistance (years 2015 & 2016)
-d.F.plot<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis.wresist_dataset.csv"))
-tmp1<-d.F.plot %>% filter(!is.na(resist)&resist>0&!is.na(dbh.mn))
-#remove iresist outliers
-tmp2<-d.F.plot %>% filter(!is.na(iresist)&iresist>0&!is.na(propCLR)&!is.na(dbh.mn)&!is.na(fruitset))
-
-pdf(paste0(getwd(),"/Analysis/ES/Hist.resist.1516.pdf"))
-hist(tmp1$resist)
-dev.off()
-pdf(paste0(getwd(),"/Analysis/ES/Hist.iresist.1516.pdf"))
-hist(tmp1$iresist)
-dev.off()
-
-#yield resistance
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resist1516_lnorm.pdf"),width=8,height=8)
-qqp(tmp1$resist, "lnorm")
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresist1516_lnorm.pdf"),width=8,height=8)
-qqp(tmp2$iresist, "norm")
-dev.off()
-
-#inverse resistance
-nm1<-lmer(iresist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn)  +
-            rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+rescale(fruitset) + (1|Plot),data=tmp2)
-summary(nm1)
-MuMIn::r.squaredGLMM(nm1)
-
-#check multicollinearity
-vif1<-vif(nm1)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm1, type = "pearson"), Fitted = fitted(nm1),Variable = tmp2$Plot[!is.na(tmp2$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistlm_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm1, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistlm_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#resistance, linear
-nm2<-lmer(resist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn) +
-            rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+rescale(fruitset)+(1|Plot),data=tmp2)
-summary(nm2)
-MuMIn::r.squaredGLMM(nm2)
-
-#check multicollinearity
-vif2<-vif(nm2)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm2, type = "pearson"), Fitted = fitted(nm2),Variable = tmp2$Plot[!is.na(tmp2$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resistlm_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm2, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resistlm_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#resistance, gaussian loglink
-nm3<-glmer(resist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn) +
-            rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+rescale(fruitset) + (1|Plot),family="gaussian"(link='log'),data=tmp2)
-summary(nm3)
-MuMIn::r.squaredGLMM(nm3)
-
-#check multicollinearity
-vif3<-vif(nm3)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm3, type = "pearson"), Fitted = fitted(nm3),Variable = tmp2$Plot[!is.na(tmp2$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resistglmgaussloglink_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm3, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resistglmgaussloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#resistance, gamma loglink
-nm4<-glmer(resist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-             rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn) +
-             rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+rescale(fruitset) + (1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(nm4)
-MuMIn::r.squaredGLMM(nm4)
-
-#check multicollinearity
-vif4<-vif(nm4)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm4, type = "pearson"), Fitted = fitted(nm4),Variable = tmp2$Plot[!is.na(tmp2$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resistglmgammaloglink_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm4, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.resistglmgammaloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#inverse resistance, gaussian loglink
-nm5<-glmer(iresist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn) +
-            rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) +rescale(fruitset) +(1|Plot),family="gaussian"(link='log'),data=tmp2)
-summary(nm5)
-MuMIn::r.squaredGLMM(nm5)
-
-#check multicollinearity
-vif5<-vif(nm5)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm5, type = "pearson"), Fitted = fitted(nm5),Variable = tmp1$Plot[!is.na(tmp1$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistglmgaussloglink_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm5, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistglmgaussloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#inverse resistance, gamma loglink
-nm6<-glmer(iresist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-             rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn) +
-             rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) +rescale(fruitset) +(1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(nm6)
-MuMIn::r.squaredGLMM(nm6)
-
-#check multicollinearity
-vif6<-vif(nm6)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm6, type = "pearson"), Fitted = fitted(nm6),Variable = tmp1$Plot[!is.na(tmp1$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistglmgammaloglink_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm6, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistglmgammaloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#inverse resistance, gamma inverse
-nm7<-glmer(iresist~rescale(elevation)*rescale(patcharea)*rescale(tmax.anom.fruit) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-             rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(dbh.mn) +
-             rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) +rescale(fruitset) +(1|Plot),family="Gamma"(link='inverse'),data=tmp2)
-summary(nm7)
-MuMIn::r.squaredGLMM(nm7)
-
-#check multicollinearity
-vif7<-vif(nm7)
-
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(nm7, type = "pearson"), Fitted = fitted(nm7),Variable = tmp1$Plot[!is.na(tmp1$propCLR)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistglmgammainverse_ResidualvFittedValues_all.v1.pdf"),width=8,height=8)
-ggplot(nm7, aes(.fitted, .resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.iresistglmgammainverse_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#resistance, gamma loglink redo with fruitset###############################
-#1) rescale(CN.ratio), 2) rescale(C.pct), 3) rescale(propCBD), 4) rescale(K.meq)
-#5) rescale(GapDry), 6) rescale(dbh.mn), 7) rescale(coffee.area.ha), 8) rescale(propCBB),
-#9) rescale(propCLR)
-
-nm8<-glmer(resist~rescale(elevation)*rescale(tmax.anom.fruit) + rescale(buffer) + rescale(patcharea)*rescale(tmax.anom.fruit) +
-             rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit)  +
-             rescale(fruitset) + (1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(nm8)
-t.gamma <- MuMIn::r.squaredGLMM(nm8)
-
-#check multicollinearity
-vif(nm8)
-
-
-#create figures of significant models
-x.gamma<-as.data.frame(summary(nm8)$coefficients)
-colnames(x.gamma)<-c("Coefficients","Std_error","t_value","p_value")
-x.gamma$Comparison<-rownames(x.gamma)
-rownames(x.gamma)<-1:nrow(x.gamma)
-
-x.gamma <- x.gamma %>% mutate(p_value=replace(p_value,p_value>0.05,"NS")) %>% 
-  mutate(sig=0) %>% mutate(sig=replace(sig,p_value=="NS",1))
-x.gamma$Labels <- c("Intercept","Elevation","Max Temperature\nAnomaly","Location in\nBuffer","Patch Area","Basal Area of\nLeguminous Trees",
-                    "Shade Diversity","Fruitset","Elevation:Max\nTemperature Anomaly","Patch Area:Max\nTemperature Anomaly",
-                    "BA Legume:\nShade Diversity","BA Legume:Max\nTemperature Anomaly","Shade Diversity:Max\nTemperature Anomaly",
-                    "BA Legume:\nShade Diversity:Max\nTemperature Anomaly")
-
-#add in labels for colors & shapes
-x.gamma$shades<-c("Other","Elevation","Other","Patch Area","Patch Area","Leguminous Trees","Shade Diversity",
-                  "Other","Elevation","Patch Area","Shade Tree\nInteraction","Leguminous Trees","Shade Diversity","Shade Tree\nInteraction")
-
-x.gamma$shapes<-c("Fixed","Fixed","Year","Fixed","Fixed","Fixed","Fixed","Year","Year","Year","Fixed","Year","Year",
-                  "Year")
-
-#order by size of effect and Importance factor
-x.gamma <- x.gamma %>% arrange(desc(abs(t_value))) %>% 
-  mutate(Importance=1:nrow(x.gamma))
-
-#write.csv(x.gamma,paste0(getwd(),"/Analysis/ES/Finalmodel_resistglmgammaloglink2.csv"))
-x.gamma<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_resistglmgammaloglink2.csv"))
-
-x.gamma$Labels<-factor(x.gamma$Labels,levels=x.gamma[order(x.gamma$Importance,decreasing=T),"Labels"])
-x.gamma$shades<-factor(x.gamma$shades,levels=c("Elevation","Patch Area","Leguminous Trees","Shade Diversity",
-                                               "Shade Tree\nInteraction","Other"),ordered=T)
-#remove intercept
-x.gamma<-x.gamma %>% filter(Labels!="Intercept")
-
-g1<-ggplot(x.gamma, aes(x = Labels, y = Coefficients, ymin = Coefficients-Std_error, ymax = Coefficients+Std_error)) + 
-  geom_errorbar(width=0.2,aes(color=factor(shades))) + 
-  geom_point(size=5,aes(shape=factor(shapes),color=factor(shades))) + scale_color_viridis_d() +
-  scale_shape_manual(values = c(15, 16)) +
-  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence on Yield Resistance")+
-  xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="right",legend.title=element_blank()) +
-  annotate("text",x=1,y=-0.75,label=paste("R2 = ",signif(t.gamma[1,1], 3)),angle=0,size=4)
-
-g1+coord_flip()
-ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_resistglmgammaloglink2.tiff"),height=8.5,width=7)
-
-
-#inverse resistance, gamma loglink
-#order of removal 1)rescale(elevation)*rescale(patcharea), 2) rescale(dbh.mn),
-#3) rescale(K.meq), 4) rescale(propCBD), 5) rescale(propCLR) , 6) rescale(coffee.area.ha),
-#7) rescale(GapDry) , 8) rescale(C.pct)
-nm9<-glmer(iresist~rescale(elevation)*rescale(tmax.anom.fruit) + rescale(patcharea) + rescale(CN.ratio) +  
-             rescale(BA.legume)*rescale(Shannon.i)*rescale(tmax.anom.fruit) + rescale(buffer) + 
-             rescale(propCBB)+(1|Plot),family="Gamma"(link='log'),data=tmp1)
-summary(nm9)
-t.gamma<-MuMIn::r.squaredGLMM(nm9)
-
-#check multicollinearity
-vif(nm9)
-
-#create figures of significant models
-x.igamma<-as.data.frame(summary(nm9)$coefficients)
-colnames(x.igamma)<-c("Coefficients","Std_error","t_value","p_value")
-x.igamma$Comparison<-rownames(x.igamma)
-rownames(x.igamma)<-1:nrow(x.igamma)
-
-x.igamma <- x.igamma %>% mutate(p_value=replace(p_value,p_value>0.05,"NS")) %>% 
-  mutate(sig=0) %>% mutate(sig=replace(sig,p_value=="NS",1))
-x.igamma$Labels <- c("Intercept","Elevation","Max Temperature\nAnomaly","Patch Area","Soil C:N","Basal Area of\nLeguminous Trees",
-                    "Shade Diversity","Located\nin Buffer","Coffee\nBerry Borer","Elevation:Max\nTemperature Anomaly",
-                    "BA Legume:\nShade Diversity","BA Legume:Max\nTemperature Anomaly","Shade Diversity:Max\nTemperature Anomaly",
-                    "BA Legume:\nShade Diversity:Max\nTemperature Anomaly")
-
-#add in labels for colors & shapes
-x.igamma$shades<-c("Other","Elevation","Other","Patch Area","Other","Leguminous Trees","Shade Diversity",
-                  "Other","Other","Elevation","Shade Tree\nInteraction",
-                  "Leguminous Trees","Shade Diversity","Shade Tree\nInteraction")
-
-x.igamma$shapes<-c("Fixed","Fixed","Micro-Climate","Fixed","Fixed","Fixed","Fixed",
-                  "Fixed","Fixed","Micro-Climate","Fixed","Micro-Climate","Micro-Climate",
-                  "Micro-Climate")
-
-#order by size of effect and Importance factor
-x.igamma <- x.igamma %>% arrange(desc(abs(t_value))) %>% 
-  mutate(Importance=1:nrow(x.igamma))
-
-#write.csv(x.igamma,paste0(getwd(),"/Analysis/ES/Finalmodel_iresistglmgammaloglink.csv"))
-x.igamma<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_iresistglmgammaloglink.csv"))
-
-x.igamma$Labels<-factor(x.igamma$Labels,levels=x.igamma[order(x.igamma$Importance,decreasing=T),"Labels"])
-x.igamma$shades<-factor(x.igamma$shades,levels=c("Elevation","Patch Area","Landscape\nInteraction","Leguminous Trees","Shade Diversity",
-                                               "Shade Tree\nInteraction","Other"),ordered=T)
-#remove intercept
-x.igamma<-x.igamma %>% filter(Labels!="Intercept")
-
-g1<-ggplot(x.igamma, aes(x = Labels, y = Coefficients, ymin = Coefficients-Std_error, ymax = Coefficients+Std_error)) + 
-  geom_errorbar(width=0.2,aes(color=factor(shades))) + 
-  geom_point(size=5,aes(shape=factor(shapes),color=factor(shades))) + scale_color_viridis_d() +
-  scale_shape_manual(values = c(15, 16)) +
-  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence on Yield Inv Resistance")+
-  xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),legend.position="right",legend.title=element_blank()) +
-  annotate("text",x=1,y=0.6,label=paste("R2 = ",signif(t.gamma[1,1], 3)),angle=0,size=4)
-
-g1+coord_flip()
-ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_iresistglmgammaloglink.pdf"),height=8,width=7)
-
-
 #####################################################################
 ######Create 2D figures of landscape and shade management interactions
 library(paletteer)
 library(tidyverse)
+library(lme4)
+library(arm)
 
 d.F.plot<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis.wresist_dataset.csv"))
 tmp1<-d.F.plot %>% filter(!is.na(Shrub.kg)&Shrub.kg>0&!is.na(dbh.mn)&!is.na(propCLR))
 
-yld_model<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) +
-             rescale(BA.legume)*rescale(Shannon.i)*factor(year) +
-             rescale(propCBB)+(1|Plot),family="Gamma"(link='log'),data=tmp1)
+yld_model<-glmer(Shrub.kg~rescale(elevation) + rescale(patcharea)*rescale(tmax.anom.fruit) + 
+                   rescale(BA.legume)+ rescale(Shannon.i)*rescale(tmax.anom.fruit) +
+                   rescale(propCBD) + (1|Plot),family="Gamma"(link='log'),data=tmp1)
+
 summary(yld_model)
-vif(yld_model)
+car::vif(yld_model)
 MuMIn::r.squaredGLMM(yld_model)
 
 tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgammaloglink2.csv"))
@@ -841,7 +516,7 @@ tmp<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgammaloglink2.csv"))
 #use mean max temp anomaly for each year for these figures)
 z.tmax<-attributes(scale(d.F.plot$tmax.anom.fruit))
 tmax <- tmp1 %>% mutate(z.tmax.anom=(tmax.anom.fruit-z.tmax[[2]])/(2*z.tmax[[3]])) %>% 
-  select(year,z.tmax.anom) %>% group_by(year) %>% 
+  dplyr::select(year,z.tmax.anom) %>% group_by(year) %>% 
   summarise(tmax.anom=max(z.tmax.anom,na.rm=T))
 
 #variables of interest
@@ -928,56 +603,50 @@ ggpubr::ggarrange(g1,g2,g3,g4,g5,g6,ncol=3,nrow=2, common.legend=T)
 ggsave(paste0(folder_names,ptemp,"/Yield.Influence.Landscape.ShadeManagement2.tiff"),height=9,width=12)
 
 ##############################################
-#Figure of resistance
-rst<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_resistglmgammaloglink2.csv"))
+#Figure of shock year yield
+rst<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgaussloglink.csv"))
 
 z.tmax<-attributes(scale(d.F.plot$tmax.anom.fruit))
 
 tmax <- tmp1 %>% mutate(z.tmax.anom=(tmax.anom.fruit-z.tmax[[2]])/(2*z.tmax[[3]])) %>% 
-  filter(year!=2014) %>% select(year,z.tmax.anom) %>% group_by(year) %>% 
+  filter(year!=2014) %>% dplyr::select(year,z.tmax.anom) %>% group_by(year) %>% 
   summarise(tmax.anom=max(z.tmax.anom,na.rm=T))
 
 tmp.land <- tmp.land %>% mutate(resist.2015 = rst[rst$Comparison=="rescale(elevation)","Coefficients"]*elevation +
-                                  rst[rst$Comparison=="rescale(patcharea)","Coefficients"]*patcharea + 
-                                  rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(patcharea)","Coefficients"]*patcharea*(tmax %>% filter(year==2015) %>% pull(tmax.anom)) +
-                                  rst[rst$Comparison=="rescale(elevation):rescale(tmax.anom.fruit)","Coefficients"]*elevation*(tmax %>% filter(year==2015) %>% pull(tmax.anom)),
+                                  rst[rst$Comparison=="rescale(patcharea)","Coefficients"]*patcharea +
+                                  rst[rst$Comparison=="rescale(elevation):rescale(tmax.anom.fruit)","Coefficients"]*elevation*as.numeric(tmax[tmax$year==2015,2]),
                                 resist.2016 = rst[rst$Comparison=="rescale(elevation)","Coefficients"]*elevation +
-                                  rst[rst$Comparison=="rescale(patcharea)","Coefficients"]*patcharea + 
-                                  rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(patcharea)","Coefficients"]*patcharea*(tmax %>% filter(year==2016) %>% pull(tmax.anom)) +
-                                  rst[rst$Comparison=="rescale(elevation):rescale(tmax.anom.fruit)","Coefficients"]*elevation*(tmax %>% filter(year==2016) %>% pull(tmax.anom)))
+                                  rst[rst$Comparison=="rescale(patcharea)","Coefficients"]*patcharea +
+                                  rst[rst$Comparison=="rescale(elevation):rescale(tmax.anom.fruit)","Coefficients"]*elevation*as.numeric(tmax[tmax$year==2016,2]))
 
 tmp.shade <- tmp.shade %>% mutate(resist.2015 = rst[rst$Comparison=="rescale(BA.legume)","Coefficients"]*BA.legume +
                                     rst[rst$Comparison=="rescale(Shannon.i)","Coefficients"]*Shannon.i +
-                                    rst[rst$Comparison=="rescale(BA.legume):rescale(Shannon.i)","Coefficients"]*Shannon.i*BA.legume +
-                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(BA.legume)","Coefficients"]*BA.legume*(tmax %>% filter(year==2015) %>% pull(tmax.anom)) +
-                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(Shannon.i)","Coefficients"]*Shannon.i*(tmax %>% filter(year==2015) %>% pull(tmax.anom)) +
-                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(BA.legume):rescale(Shannon.i)","Coefficients"]*Shannon.i*BA.legume*(tmax %>% filter(year==2015) %>% pull(tmax.anom)),
+                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(BA.legume)","Coefficients"]*BA.legume*as.numeric(tmax[tmax$year==2015,2]) +
+                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(Shannon.i)","Coefficients"]*Shannon.i*as.numeric(tmax[tmax$year==2015,2]),
                                   resist.2016 = rst[rst$Comparison=="rescale(BA.legume)","Coefficients"]*BA.legume +
                                     rst[rst$Comparison=="rescale(Shannon.i)","Coefficients"]*Shannon.i +
-                                    rst[rst$Comparison=="rescale(BA.legume):rescale(Shannon.i)","Coefficients"]*Shannon.i*BA.legume +
-                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(BA.legume)","Coefficients"]*BA.legume*(tmax %>% filter(year==2016) %>% pull(tmax.anom)) +
-                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(Shannon.i)","Coefficients"]*Shannon.i*(tmax %>% filter(year==2016) %>% pull(tmax.anom)) +
-                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(BA.legume):rescale(Shannon.i)","Coefficients"]*Shannon.i*BA.legume*(tmax %>% filter(year==2016) %>% pull(tmax.anom)))
+                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(BA.legume)","Coefficients"]*BA.legume*as.numeric(tmax[tmax$year==2016,2]) +
+                                    rst[rst$Comparison=="rescale(tmax.anom.fruit):rescale(Shannon.i)","Coefficients"]*Shannon.i*as.numeric(tmax[tmax$year==2016,2]))
 
 r1<-ggplot(tmp.land, aes(patch, elev, z = resist.2015)) +geom_raster(aes(fill=resist.2015)) +
-  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1,1.8),breaks = c(-1, 0, 1.8)) + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Resistance") + ggtitle("Influence of Landscape\nFeatures on Yield Resistance\n(2015)") + theme(text=element_text(size=16))
+  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1.55,3),breaks = c(-1.5, 0, 3.0)) + theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
+  labs(fill="Yield") + ggtitle("Influence of Landscape\nFeatures on Shrub Yield\n(2015)") + theme(text=element_text(size=16))
 
 r2<-ggplot(tmp.land, aes(patch, elev, z = resist.2016)) +geom_raster(aes(fill=resist.2016)) +
-  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1,1.8),breaks = c(-1, 0, 1.8)) +
+  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1.55,3),breaks = c(-1.5, 0, 3.0)) +
   theme_classic() + ylab("Elevation [m]") + xlab("Patch Area [ha]")+
-  labs(fill="Resistance") + ggtitle("Influence of Landscape\nFeatures on Yield Resistance\n(2016)") + theme(text=element_text(size=16))
+  labs(fill="Yield") + ggtitle("Influence of Landscape\nFeatures on Shrub Yield\n(2016)") + theme(text=element_text(size=16))
 
 r3<-ggplot(tmp.shade, aes(diversity, legume, z = resist.2015)) +geom_raster(aes(fill=resist.2015)) +
-  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1,1.8),breaks = c(-1, 0, 1.8)) + theme_classic() + xlab("Shannon Index") + ylab("Basal Area\nLeguminous Trees [m2]")+
-  labs(fill="Yield") + ggtitle("Influence of Shade\nTrees on Yield Resistance\n(2015)") + theme(text=element_text(size=16))
+  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1.55,3),breaks = c(-1.5, 0, 3.0)) + theme_classic() + xlab("Shannon Index") + ylab("Basal Area\nLeguminous Trees [m2]")+
+  labs(fill="Yield") + ggtitle("Influence of Shade\nTrees on Shrub Yield\n(2015)") + theme(text=element_text(size=16))
 
 r4<-ggplot(tmp.shade, aes(diversity, legume, z = resist.2016)) +geom_raster(aes(fill=resist.2016)) +
-  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1,1.8),breaks = c(-1, 0, 1.8)) + theme_classic() + xlab("Shannon Index") + ylab("Basal Area\nLeguminous Trees [m2]")+
-  labs(fill="Yield") + ggtitle("Influence of Shade\nTrees on Yield Resistance\n(2016)") + theme(text=element_text(size=16))
+  scale_fill_paletteer_c("scico::roma",direction = 1, limits=c(-1.55,3),breaks = c(-1.5, 0, 3.0)) + theme_classic() + xlab("Shannon Index") + ylab("Basal Area\nLeguminous Trees [m2]")+
+  labs(fill="Yield") + ggtitle("Influence of Shade\nTrees on Shrub Yield\n(2016)") + theme(text=element_text(size=16))
 
 ggpubr::ggarrange(r1,r2,r3,r4,ncol=2,nrow=2, common.legend=T)
-ggsave(paste0(folder_names,ptemp,"/Resistance.Influence.Landscape.ShadeManagement2.tiff"),height=11,width=10)
+ggsave(paste0(folder_names,ptemp,"/Yield.Influence.Landscape.ShadeManagement.tiff"),height=11,width=10)
 
 ##################################################################
 #Climate Figures
