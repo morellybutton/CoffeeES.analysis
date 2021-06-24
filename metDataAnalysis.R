@@ -8,7 +8,12 @@ library(ggpubr)
 library(lme4)
 
 
-setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
+folder_names<-"/Users/AMOREL001/Google Drive/Research/"
+#data folder
+dtemp<-"Africa/ECOLIMITS1/ECOLIMITS2019/Yayu"
+#pubs folder
+ptemp<-"Publications/2021/CoffeeLandscapes/"
+setwd(paste0(folder_names,dtemp))
 
 #load metdata
 met_data <- read_csv(paste0(getwd(),"/MetData/MonthlyStress_estimates.csv"))
@@ -36,10 +41,10 @@ met_data<-met_data %>% mutate(tmax_anom=Tmax-u_Tmax,tmin_anom=Tmin-u_Tmin,tavg_a
 ta_all_mx<-lmer(tavg_anom~arm::rescale(elevation)*arm::rescale(PatchArea)+(month.no|year),data=met_data,REML=F)
 summary(ta_all_mx)
 
-MuMIn::r.squaredGLMM(ta_all)
-
 ta_all<-lm(tavg_anom~arm::rescale(elevation)*arm::rescale(PatchArea),data=met_data %>% filter(year<=2016))
 summary(ta_all)
+
+MuMIn::r.squaredGLMM(ta_all)
 
 ta_14<-lm(tavg_anom~arm::rescale(elevation)+arm::rescale(PatchArea),data=met_data %>% filter(year==2014))
 summary(ta_14)

@@ -3,22 +3,36 @@
 library(tidyverse)
 library(gridExtra)
 
-setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
+folder_names<-"/Users/AMOREL001/Google Drive/Research/"
+#data folder
+dtemp<-"Africa/ECOLIMITS1/ECOLIMITS2019/Yayu"
+#pubs folder
+ptemp<-"Publications/2021/CoffeeLandscapes/"
+setwd(paste0(folder_names,dtemp))
+
 
 #Load plot yields
 df<-read.csv(paste0(getwd(),"/Analysis/ES/ES.plot_analysis_dataset.csv"))
-#load modified microclimate values
-#numb<-read.csv(paste0(getwd(),"/Analysis/ES/ES.shrub.mod_analysis_dataset.csv"))
-#numb <- numb %>% filter(year!=2014) %>% select(Plot,year,ah.fruit,ah.flower) %>% group_by(Plot,year) %>%
-#  summarise(ah.fruit.mod=mean(ah.fruit,na.rm=T),ah.flower.mod=mean(ah.flower,na.rm=T)) %>% ungroup()
 
-#df<-left_join(df,numb,by=c("Plot","year"))
+#add metdata
+met_data <- read_csv(paste0(getwd(),"/MetData/MonthlyStress_estimates.csv"))
+#calculate water stress (fruiting) and temperature averages (flowering)
+met_summ <- met_data %>% rename(date=month) %>% mutate(year=lubridate::year(date), month=lubridate::month(date)) %>% 
+  mutate(season="flowering") %>% mutate(season=replace(season,month>4&month<10,"fruiting")) %>% 
+  group_by(Plot,year,season) %>% summarise(tmax=mean(Tmax,na.rm=T),tmin=mean(Tmin,na.rm=T),tavg=mean(Tavg,na.rm=T),vpdmax=mean(maxVPD,na.rm=T),
+                                           stress=mean(stress, na.rm=T))
 
-#df<- df %>% mutate(ah.flower=replace(ah.flower,is.na(ah.flower),ah.flower.mod[is.na(ah.flower)]),ah.fruit=replace(ah.fruit,is.na(ah.fruit),ah.fruit.mod[is.na(ah.fruit)]))
+met_flower <- met_summ %>% filter(season=="flowering") %>% rename(tmax_flower=tmax,tmin_flower=tmin,tavg_flower=tavg,
+                                                                  vpdmax_flower=vpdmax,stress_flower=stress)
+met_fruit <- met_summ %>% filter(season=="fruiting") %>% rename(tmax_fruit=tmax,tmin_fruit=tmin,tavg_fruit=tavg,
+                                                                  vpdmax_fruit=vpdmax,stress_fruit=stress)
 
-df.comp14<- df %>% filter(year=="2014") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,vpd.fruit,vpd.flower,tmax.flower,tmax.fruit,p_et.flower,p_et.fruit)
-df.comp15<- df %>% filter(year=="2015") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,vpd.fruit,vpd.flower,tmax.flower,tmax.fruit,p_et.flower,p_et.fruit)
-df.comp16<- df %>% filter(year=="2016") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,vpd.fruit,vpd.flower,tmax.flower,tmax.fruit,p_et.flower,p_et.fruit)
+df <- left_join(df,met_flower %>% select(-season), by = c("Plot","year"))
+df <- left_join(df,met_fruit %>% select(-season), by = c("Plot","year"))
+
+df.comp14<- df %>% filter(year=="2014") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
+df.comp15<- df %>% filter(year=="2015") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
+df.comp16<- df %>% filter(year=="2016") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
 
 dF <- df.comp14 %>% gather(key="variable",value="i2014",c(-Plot,-kebele))
 
@@ -41,10 +55,33 @@ g1<-ggplot(dF[dF$variable=="Shrub.kg",],aes(i2014,i2015))+geom_point(aes(color=w
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g2<-ggplot(dF[dF$variable=="propCBB",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g2<-ggplot(dF[dF$variable=="tmax_flower",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(20,50)+xlim(20,50)+ xlab("Mean Maximum Temperature\nDuring Flowering 2014 [C]")+ylab("Mean Maximum Temperature\nDuring Flowering  2015 [C]")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+g3<-ggplot(dF[dF$variable=="stress_flower",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(-300,0)+xlim(-300,0) + xlab("Mean Monthly Water Stress\nDuring Flowering 2014 [mm]")+ylab("Mean Monthly Water Stress\nDuring Flowering 2015 [mm]")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+
+g4<-ggplot(dF[dF$variable=="propCBB",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Coffee Berry Borer\nIncidence 2014")+ylab("Coffee Berry Borer\nIncidence 2015")+
   theme(
@@ -53,10 +90,10 @@ g2<-ggplot(dF[dF$variable=="propCBB",],aes(i2014,i2015))+geom_point(aes(color=we
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g3<-ggplot(dF[dF$variable=="propCBD",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g5<-ggplot(dF[dF$variable=="propCBD",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Coffee Berry Disease\nIncidence 2014")+ylab("Coffee Berry Disease\nIncidence 2015")+
   theme(
@@ -65,10 +102,10 @@ g3<-ggplot(dF[dF$variable=="propCBD",],aes(i2014,i2015))+geom_point(aes(color=we
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g4<-ggplot(dF[dF$variable=="prop.fdrop",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g6<-ggplot(dF[dF$variable=="prop.fdrop",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Proportion of Berries\nDropped 2014")+ylab("Proportion of Berries\nDropped 2015")+
   theme(
@@ -77,22 +114,10 @@ g4<-ggplot(dF[dF$variable=="prop.fdrop",],aes(i2014,i2015))+geom_point(aes(color
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g5<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,1)+xlim(0,1)+ 
-  xlab("Proportion of Leaves\nDropped 2014")+ylab("Proportion of Leaves\nDropped 2015")+
-  theme(
-    panel.background=element_blank()
-    ,axis.line.x = element_line(color = 'black')
-    ,axis.line.y = element_line(color = 'black')
-    ,legend.key = element_rect(colour = "white", fill = NA)
-    ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
-    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
-
-g6<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g7<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Coffee Leaf Rust\nIncidence 2014")+ylab("Coffee Leaf Rust\nIncidence 2015")+
   theme(
@@ -101,39 +126,76 @@ g6<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2015))+geom_point(aes(color=we
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g7<-ggplot(dF[dF$variable=="propHerb",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g8<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
-  xlab("Herbivory Incidence 2014")+ylab("Herbivory Incidence 2015")+
+  xlab("Proportion of Leaves\nDropped 2014")+ylab("Proportion of Leaves\nDropped 2015")+
   theme(
     panel.background=element_blank()
     ,axis.line.x = element_line(color = 'black')
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g8<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=4)
-ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2015.pdf"),g8,height=6,width=12)
+
+g9<-ggplot(dF[dF$variable=="propHerb",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,1)+xlim(0,1)+ 
+  xlab("Herbivory\nIncidence 2014")+ylab("Herbivory\nIncidence 2015")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+g10<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3)
+ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2015.pdf"),g10,height=10,width=11)
+ggsave(paste0(folder_names,ptemp,"/ComparativeFigures.2014v2015.tiff"),g10,height=10,width=11)
 
 #plot comparisons between 2014 and 2016
 #plot comparisons, yield
 g1<-ggplot(dF[dF$variable=="Shrub.kg",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,1.5)+xlim(0,1.5)+ xlab("Median per Shrub\nYield 2014 [kg shrub-1]")+ylab("Median per Shrub\nYield 2016 [kg shrub-1]")+
+  ylim(0,1.5)+xlim(0,1.5)+ xlab("Median per Shrub\nYield 2014 [kg shrub-1]")+ylab("Median per Shrub\nYield  2016 [kg shrub-1]")+
   theme(
     panel.background=element_blank()
     ,axis.line.x = element_line(color = 'black')
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g2<-ggplot(dF[dF$variable=="propCBB",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,0.5)+xlim(0,0.5)+ 
+g2<-ggplot(dF[dF$variable=="tmax_flower",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(20,50)+xlim(20,50)+ xlab("Mean Maximum Temperature\nDuring Flowering 2014 [C]")+ylab("Mean Maximum Temperature\nDuring Flowering  2016 [C]")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+g3<-ggplot(dF[dF$variable=="stress_flower",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(-200,0)+xlim(-200,0) + xlab("Mean Monthly Water Stress\nDuring Flowering 2014 [mm]")+ylab("Mean Monthly Water Stress\nDuring Flowering 2016 [mm]")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+
+g4<-ggplot(dF[dF$variable=="propCBB",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,1)+xlim(0,1)+ 
   xlab("Coffee Berry Borer\nIncidence 2014")+ylab("Coffee Berry Borer\nIncidence 2016")+
   theme(
     panel.background=element_blank()
@@ -141,10 +203,10 @@ g2<-ggplot(dF[dF$variable=="propCBB",],aes(i2014,i2016))+geom_point(aes(color=we
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g3<-ggplot(dF[dF$variable=="propCBD",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g5<-ggplot(dF[dF$variable=="propCBD",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Coffee Berry Disease\nIncidence 2014")+ylab("Coffee Berry Disease\nIncidence 2016")+
   theme(
@@ -153,10 +215,10 @@ g3<-ggplot(dF[dF$variable=="propCBD",],aes(i2014,i2016))+geom_point(aes(color=we
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g4<-ggplot(dF[dF$variable=="prop.fdrop",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g6<-ggplot(dF[dF$variable=="prop.fdrop",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Proportion of Berries\nDropped 2014")+ylab("Proportion of Berries\nDropped 2016")+
   theme(
@@ -165,22 +227,10 @@ g4<-ggplot(dF[dF$variable=="prop.fdrop",],aes(i2014,i2016))+geom_point(aes(color
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g5<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,1)+xlim(0,1)+ 
-  xlab("Proportion of Leaves\nDropped 2014")+ylab("Proportion of Leaves\nDropped 2016")+
-  theme(
-    panel.background=element_blank()
-    ,axis.line.x = element_line(color = 'black')
-    ,axis.line.y = element_line(color = 'black')
-    ,legend.key = element_rect(colour = "white", fill = NA)
-    ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
-    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
-
-g6<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g7<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Coffee Leaf Rust\nIncidence 2014")+ylab("Coffee Leaf Rust\nIncidence 2016")+
   theme(
@@ -189,23 +239,37 @@ g6<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2016))+geom_point(aes(color=we
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g7<-ggplot(dF[dF$variable=="propHerb",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g8<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
-  xlab("Herbivory Incidence 2014")+ylab("Herbivory Incidence 2016")+
+  xlab("Proportion of Leaves\nDropped 2014")+ylab("Proportion of Leaves\nDropped 2016")+
   theme(
     panel.background=element_blank()
     ,axis.line.x = element_line(color = 'black')
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=12)
+    ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g8<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,ncol=4)
-ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2016.pdf"),g8,height=6,width=12)
+
+g9<-ggplot(dF[dF$variable=="propHerb",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,1)+xlim(0,1)+ 
+  xlab("Herbivory\nIncidence 2014")+ylab("Herbivory\nIncidence 2016")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+g10<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3)
+ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2016.pdf"),g10,height=10,width=11)
+ggsave(paste0(folder_names,ptemp,"/ComparativeFigures.2014v2016.tiff"),g10,height=10,width=11)
 
 #comparison between 2015 and 2016
 g1<-ggplot(dF[dF$variable=="Shrub.kg",],aes(i2015,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
