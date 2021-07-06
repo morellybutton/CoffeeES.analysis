@@ -6,7 +6,13 @@ library(lubridate)
 library(gridExtra)
 library(ggpubr)
 
-setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu/")
+#setwd("/Volumes/ELDS/ECOLIMITS/Ethiopia/Yayu")
+folder_names<-"/Users/AMOREL001/Google Drive/Research/"
+#data folder
+dtemp<-"Africa/ECOLIMITS1/ECOLIMITS2019/Yayu"
+#pubs folder
+ptemp<-"Publications/2021/CoffeeLandscapes/"
+setwd(paste0(folder_names,dtemp))
 
 #load metdata
 met_data <- read_csv(paste0(getwd(),"/MetData/MonthlyStress_estimates.csv"))
@@ -366,5 +372,5 @@ g4<-met_ppt %>% ggplot() + geom_point(aes(Tppt,ppt)) + theme_classic() + ylab("E
   theme(text=element_text(size=16)) + geom_abline(slope=1,intercept=0,linetype="dashed")
 
 ggpubr::ggarrange(g1,g4,ncol=2,nrow=1)
-ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/ERA5vsGroundMeasures.pdf",height=5,width=10)
+ggsave(paste0(folder_names,ptemp,"/ERA5vsGroundMeasures.tiff"))
 

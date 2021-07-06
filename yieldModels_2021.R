@@ -70,13 +70,13 @@ buff<- tmp14 %>% filter(buffer==1) %>% summarise(patch_min=min(patcharea,na.rm=T
 #check heteroskedasticity
 diagnos <- data.frame(Resid = resid(rm2, type = "pearson"), Fitted = fitted(rm2),Variable = tmp14$Plot[!is.na(tmp14$propCLR)],yield=tmp14$Shrub.kg[!is.na(tmp14$propCLR)] )
 pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_ResidualvFittedValues_2014.pdf"),width=8,height=8)
-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
+d1<-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
   geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
   ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20)) 
 dev.off()
 
 pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_qqplotResiduals_2014.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm, main = list("QQ-Plot", cex = 2), 
+d2<-qqmath(~Resid, data = diagnos, distribution = qnorm, main = list("QQ-Plot", cex = 2), 
        xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
        panel = function(x, ...) {
          panel.qqmathline(x, ...)
@@ -85,11 +85,14 @@ qqmath(~Resid, data = diagnos, distribution = qnorm, main = list("QQ-Plot", cex 
 dev.off()
 
 pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_fittedvsobserved_2014.pdf"),width=8,height=8)
-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
+d3<-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
   geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
   ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
 dev.off()
 
+#create figure of diagnostic figures
+ggarrange(d1,d3,d2,ncol=3)
+ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_model_normalyr.tiff"),height=5,width=15)
 
 #create figures of significant models
 x.lm<-as.data.frame(summary(rm2)$coefficients)
@@ -106,6 +109,7 @@ x.lm$Labels <- c("Intercept","Elevation","Patch Area","Located in\nbuffer","Soil
 x.lm$shades<-c("Other","Landscape","Landscape","Landscape","Soil","Shade Management","Shade Management",
                   "Shade Management","Disease","Shade Management")
 
+x.lm$shapes<-c("Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Year","Fixed")
 
 #order by size of effect and Importance factor
 x.lm <- x.lm %>% arrange(desc(abs(t_value))) %>% 
@@ -116,7 +120,7 @@ x.lm<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldlm.csv"))
 
 x.lm$Labels<-factor(x.lm$Labels,levels=x.lm[order(x.lm$Importance,decreasing=T),"Labels"])
 x.lm$shades<-factor(x.lm$shades,levels=c("Landscape","Shade Management","Soil","Disease", "Other"),ordered=T)
-x.lm$sig<-factor(x.lm$sig, levels=c(0,1),labels=c("Significant","NS"))
+#x.lm$sig<-factor(x.lm$sig, levels=c(0,1),labels=c("Significant","NS"))
 
 #remove intercept
 x.lm<-x.lm %>% filter(Labels!="Intercept")
@@ -124,14 +128,15 @@ r.lm<-summary(rm2)
 
 g1<-ggplot(x.lm, aes(x = Labels, y = Coefficients, ymin = Coefficients-Std_error, ymax = Coefficients+Std_error)) + 
   geom_errorbar(width=0.2,aes(color=factor(shades))) + 
-  geom_point(size=5,aes(color=factor(shades),shape=factor(sig))) + scale_color_viridis_d() +
+  geom_point(size=5,aes(color=factor(shades),shape=factor(shapes))) + scale_color_viridis_d() +
   scale_shape_manual(values = c(15, 16)) +
-  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence on Shrub Yield (kg)\n[2014]")+
-  xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 20),axis.text.x=element_text(angle = 45,hjust=1),legend.position="right",legend.title=element_blank()) +
-  annotate("text",x=0.75,y=0.1,label=paste("R2 = ",signif(r.lm$r.squared, 3)),angle=0,size=4)
+  theme(taxis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Normal Year")+
+  xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed") + theme_classic() + 
+  annotate("text",x=0.75,y=-0.3,label=paste("R^2 == ",signif(r.lm$r.squared, 3)),angle=0,size=5,parse=T) +
+  theme(axis.text.x=element_text(angle = 45,hjust=1),legend.position="right",legend.title=element_blank(),
+        plot.title = element_text(hjust = 0.5)) + theme(text = element_text(size = 20))
 
-g1+coord_flip()
+g2<-g1+coord_flip()
 ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldlm.tiff"),height=8,width=9)
 #ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/AnalysisFigures/Model_results_yld14.v4.pdf",height=6,width=6)
 
@@ -221,14 +226,14 @@ vif(ym3)
 #check heteroskedasticity
 diagnos3 <- data.frame(Resid = resid(ym3, type = "pearson"), Fitted = fitted(ym3),Variable = tmp2$Plot[!is.na(tmp2$norm.yld)] )
 pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgammaloglink_ResidualvFittedValues_shock.v1.pdf"),width=8,height=8)
-ggplot(diagnos3, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
+d1<-ggplot(diagnos3, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
   geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
   ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20))
 
 dev.off()
 
 pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgammaloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos3, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
+d2<-qqmath(~Resid, data = diagnos3, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
        xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
        panel = function(x, ...) {
          panel.qqmathline(x, ...)
@@ -247,6 +252,17 @@ summary(ym4)
 vif(ym4)
 r.gamma<-MuMIn::r.squaredGLMM(ym4)
 
+#model assessment
+diagnos4 <- data.frame(yield = ym4@frame$Shrub.kg, Fitted = fitted(ym4),Variable = ym4@frame$Plot )
+tiff(paste0(getwd(),"/Analysis/ES/Plot.yldlm_fittedvsobserved_shockyrs.tiff"))
+d3<-ggplot(diagnos4, aes(yield,Fitted))+geom_point() +
+  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
+  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
+dev.off()
+
+#create figure of diagnostic figures
+ggarrange(d1,d3,d2,ncol=3)
+ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_model_shockyrs.tiff"),height=5,width=15)
 
 #create figures of significant models
 x.gamma<-as.data.frame(summary(ym4)$coefficients)
@@ -279,18 +295,31 @@ x.gamma$shades<-factor(x.gamma$shades,levels=c("Landscape","Shade Management","S
 #remove intercept
 x.gamma<-x.gamma %>% filter(Labels!="Intercept")
 
-g1<-ggplot(x.gamma, aes(x = Labels, y = Coefficients, ymin = Coefficients-Std_error, ymax = Coefficients+Std_error)) + 
+g3<-ggplot(x.gamma, aes(x = Labels, y = Coefficients, ymin = Coefficients-Std_error, ymax = Coefficients+Std_error)) + 
   geom_errorbar(width=0.2,aes(color=factor(shades))) + 
   geom_point(size=5,aes(shape=factor(shapes),color=factor(shades))) + scale_color_viridis_d() +
   scale_shape_manual(values = c(15, 16)) +
-  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Influence on Shrub Yield (kg)\n[Shock Years]")+
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Shock Years")+
   xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
-  theme(text = element_text(size = 16),axis.text.x=element_text(angle = 45,hjust=1),plot.title = element_text(hjust = 0.5),legend.position="right",legend.title=element_blank()) +
-  annotate("text",x=1,y=-0.75,label=paste("R2 = ",signif(r.gamma[1,1], 3)),angle=0,size=5) + theme(text = element_text(size = 20))
+  theme(axis.text.x=element_text(angle = 45,hjust=1),plot.title = element_text(hjust = 0.5),legend.position="right",legend.title=element_blank()) +
+  annotate("text",x=1,y=-0.75,label=paste("R^2 == ",signif(r.gamma[1,1], 3)),angle=0,size=5,parse=T) + theme(text = element_text(size = 20))
 
-g1+coord_flip()
+g4<-g3+coord_flip()
 ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldglmgammaloglink.tiff"),height=8,width=9)
 
+library(ggpubr)
+#create overall title
+text <- "Landscape and Management Influences on Yield"
+
+# Create a text grob
+tgrob <- text_grob(text,size = 24)
+# Draw the text
+plot_0 <- as_ggplot(tgrob) + theme(plot.margin = margin(0,2,0,2, "cm"))
+
+ggarrange(plot_0,NULL,g2, g4,
+          ncol =2,nrow = 2,heights = c(1,5),common.legend=T,legend=c("bottom"))
+
+ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_comboplots.tiff"),height=9,width=16)
 
 #####################################################################
 ######Create 2D figures of landscape and shade management interactions

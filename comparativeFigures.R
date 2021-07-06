@@ -30,9 +30,9 @@ met_fruit <- met_summ %>% filter(season=="fruiting") %>% rename(tmax_fruit=tmax,
 df <- left_join(df,met_flower %>% select(-season), by = c("Plot","year"))
 df <- left_join(df,met_fruit %>% select(-season), by = c("Plot","year"))
 
-df.comp14<- df %>% filter(year=="2014") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
-df.comp15<- df %>% filter(year=="2015") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
-df.comp16<- df %>% filter(year=="2016") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,propHerb,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
+df.comp14<- df %>% filter(year=="2014") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,iCLR,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
+df.comp15<- df %>% filter(year=="2015") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,iCLR,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
+df.comp16<- df %>% filter(year=="2016") %>% select(Plot,kebele,Shrub.kg,fruitset,propCBB,propCBD,prop.ldrop,prop.fdrop,propCLR,iCLR,tmax.anom.flower,tmax.anom.fruit,tmax_flower,tmax_fruit,vpdmax_flower,vpdmax_fruit,stress_flower,stress_fruit)
 
 dF <- df.comp14 %>% gather(key="variable",value="i2014",c(-Plot,-kebele))
 
@@ -129,7 +129,19 @@ g7<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2015))+geom_point(aes(color=we
     ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g8<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g8<-ggplot(dF[dF$variable=="iCLR",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,4)+xlim(0,4)+ 
+  xlab("CLR Intensity\n2014")+ylab("CLR Intensity\n2015")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+g9<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Proportion of Leaves\nDropped 2014")+ylab("Proportion of Leaves\nDropped 2015")+
   theme(
@@ -142,17 +154,6 @@ g8<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2015))+geom_point(aes(color
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 
-g9<-ggplot(dF[dF$variable=="propHerb",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,1)+xlim(0,1)+ 
-  xlab("Herbivory\nIncidence 2014")+ylab("Herbivory\nIncidence 2015")+
-  theme(
-    panel.background=element_blank()
-    ,axis.line.x = element_line(color = 'black')
-    ,axis.line.y = element_line(color = 'black')
-    ,legend.key = element_rect(colour = "white", fill = NA)
-    ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=14)
-    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 g10<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3)
 ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2015.pdf"),g10,height=10,width=11)
@@ -242,7 +243,19 @@ g7<-ggplot(dF[dF$variable=="propCLR",],aes(i2014,i2016))+geom_point(aes(color=we
     ,text = element_text(size=14)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
-g8<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+g8<-ggplot(dF[dF$variable=="iCLR",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
+  ylim(0,4)+xlim(0,4)+ 
+  xlab("CLR Intensity\n2014")+ylab("CLR Intensity\n2016")+
+  theme(
+    panel.background=element_blank()
+    ,axis.line.x = element_line(color = 'black')
+    ,axis.line.y = element_line(color = 'black')
+    ,legend.key = element_rect(colour = "white", fill = NA)
+    ,legend.justification=c(0,1), legend.position=c(0,1)
+    ,text = element_text(size=14)
+    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
+
+g9<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
   ylim(0,1)+xlim(0,1)+ 
   xlab("Proportion of Leaves\nDropped 2014")+ylab("Proportion of Leaves\nDropped 2016")+
   theme(
@@ -255,17 +268,6 @@ g8<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2016))+geom_point(aes(color
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 
-g9<-ggplot(dF[dF$variable=="propHerb",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
-  ylim(0,1)+xlim(0,1)+ 
-  xlab("Herbivory\nIncidence 2014")+ylab("Herbivory\nIncidence 2016")+
-  theme(
-    panel.background=element_blank()
-    ,axis.line.x = element_line(color = 'black')
-    ,axis.line.y = element_line(color = 'black')
-    ,legend.key = element_rect(colour = "white", fill = NA)
-    ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=14)
-    ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 g10<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3)
 ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2016.pdf"),g10,height=10,width=11)
