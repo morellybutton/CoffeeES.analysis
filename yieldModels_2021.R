@@ -106,7 +106,7 @@ x.lm$Labels <- c("Intercept","Elevation","Patch Area","Located in\nbuffer","Soil
                     "Shade Diversity","Canopy Gap","Coffee Berry\nDisease",
                     "Shade Diversity:\nLeguminous Trees")
 #add in labels for colors & shapes
-x.lm$shades<-c("Other","Landscape","Landscape","Landscape","Soil","Shade Management","Shade Management",
+x.lm$shades<-c("Other","Landscape","Landscape","Other","Soil","Shade Management","Shade Management",
                   "Shade Management","Disease","Shade Management")
 
 x.lm$shapes<-c("Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Year","Fixed")
@@ -309,17 +309,21 @@ ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldglmgammaloglink.tiff")
 
 library(ggpubr)
 #create overall title
-text <- "Landscape and Management Influences on Yield"
+#text <- "Landscape and Management Influences on Yield"
 
 # Create a text grob
-tgrob <- text_grob(text,size = 24)
+##tgrob <- text_grob(text,size = 24)
 # Draw the text
 plot_0 <- as_ggplot(tgrob) + theme(plot.margin = margin(0,2,0,2, "cm"))
 
-ggarrange(plot_0,NULL,g2, g4,
-          ncol =2,nrow = 2,heights = c(1,5),common.legend=T,legend=c("bottom"))
+#ggarrange(plot_0,NULL,g2, g4,
+#          ncol =2,nrow = 2,heights = c(1,5),common.legend=T,legend=c("bottom"),labels="auto")
 
-ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_comboplots.tiff"),height=9,width=16)
+ggarrange(g2, g4, ncol =2,common.legend=T,legend=c("bottom"),labels="auto",
+          font.label = list(size = 18, color = "black", face = "bold", family = NULL),
+          label.x=0.2)
+
+ggsave(paste0(folder_names,ptemp,"Finalmodel_results_comboplots.tiff"),height=9,width=16)
 
 #####################################################################
 ######Create 2D figures of landscape and shade management interactions
@@ -437,7 +441,8 @@ g6<-ggplot(tmp.shade, aes(diversity, legume, z = yld.2016)) +geom_raster(aes(fil
   labs(fill="Yield") + ggtitle("Influence of Shade\nTrees on Shrub Yield\n(2016)") + theme(plot.title = element_text(hjust = 0.5),text=element_text(size=16)) + 
   guides(fill = guide_colourbar(label.theme = element_text(angle = 45)))
 
-ggpubr::ggarrange(g1,g2,g3,g4,g5,g6,ncol=3,nrow=2, common.legend=T)
+ggpubr::ggarrange(g1,g2,g3,g4,g5,g6,ncol=3,nrow=2, common.legend=T,labels="auto",font.label = list(size = 18, color = "black", face = "bold", family = NULL),
+                  label.x=0.1)
 ggsave(paste0(folder_names,ptemp,"/Yield.Influence.Landscape.ShadeManagement3.tiff"),height=9,width=12)
 
 ##############################################
