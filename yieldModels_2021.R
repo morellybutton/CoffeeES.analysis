@@ -494,31 +494,90 @@ oni <- oni %>% mutate(Date=as.Date(paste0(PeriodNum,"-01"),format="%Y-%m-%d")) %
 
 era5<-left_join(era5,oni %>% select(Date,oni),by="Date")
 
-g1<-ggplot(era5 %>% filter(Plot=="B13"&year>=1981),aes(Date,wd_anom,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
-  xlab("Year") + ylab("Anomalies [mm]") + ggtitle("Monthly Water Deficit") +
-  ylim(-60,90)+
-  theme(text=element_text(size=16),legend.title.align=0.5) + 
+g1<-ggplot(era5 %>% filter(Plot=="B13"&year>=1981),aes(Date,wd_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
+  xlab("Year") + ylab("Anomalies [sigma]") + ggtitle("Quarterly Averaged Water Deficit") +
+  #ylim(-60,90)+
+  theme(text=element_text(size=12),legend.title.align=0.5) + 
   scale_fill_gradient2( low = "blue", mid = "white",
                         high = "red", midpoint = 0, space = "Lab",
-                        guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") +
-  geom_vline(aes(xintercept=as.Date("2014-11-01")),linetype="dashed") +
-  annotate("text",x=as.Date("2016-06-01"),y=85,label=paste0("Study\nPeriod"),size=5) +
-  geom_vline(aes(xintercept=as.Date("2017-12-01")),linetype="dashed") 
+                        guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex",
+                        limits=c(-2,2.6)) +
+  geom_vline(aes(xintercept=as.Date("2014-01-01")),linetype="dashed") +
+  annotate("text",x=as.Date("2015-07-01"),y=1.5,label=paste0("Study\nPeriod"),size=4) +
+  geom_vline(aes(xintercept=as.Date("2016-12-01")),linetype="dashed") 
 #annotate("text",x=as.Date("2017-01-01"),y=90,label=paste0("Year 2"),angle=90)
 
-g2<-ggplot(era5 %>% filter(Plot=="B13"&year>=1981),aes(Date,tmax_anom,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
-  xlab("Year") + ylab("Anomalies [C]") + ggtitle("Monthly Maximum Temperature") +
-  ylim(-5,5)+
-  theme(text=element_text(size=16),legend.title.align=0.5) + 
+g1a<-ggplot(era5 %>% filter(Plot=="B13"&year>=2014&year<=2016),aes(Date,wd_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity",colour="black") + theme_classic() +
+  xlab("Year") + ylab("") + 
+  ggtitle("Quarterly Averaged Water Deficit") +
+  #ylim(-60,90)+
+  theme(text=element_text(size=12),legend.title.align=0.5) + 
   scale_fill_gradient2( low = "blue", mid = "white",
-                        high = "red", midpoint = 0, space = "Lab",
+                        high = "red", midpoint = 0, space = "Lab", limits=c(-2,2.6),
+                        guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") +
+  geom_vline(aes(xintercept=as.Date("2014-01-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2014-11-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2015-11-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2016-11-01")),linetype="dashed") +
+  annotate("text",x=as.Date("2014-06-01"),y=1,label="Normal Year",size=4) +
+  annotate("text",x=as.Date("2015-06-01"),y=0.9,label="Shock Year\n1",size=4) +
+  annotate("text",x=as.Date("2016-06-01"),y=0.9,label="Shock Year\n2",size=4)
+
+g2<-ggplot(era5 %>% filter(Plot=="B13"&year>=1981),aes(Date,tmax_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
+  xlab("Year") + ylab("Anomalies [sigma]") + ggtitle("Quarterly Averaged Maximum Temperature") +
+  #ylim(-5,5)+
+  theme(text=element_text(size=12),legend.title.align=0.5) + 
+  scale_fill_gradient2( low = "blue", mid = "white",
+                        high = "red", midpoint = 0, space = "Lab", limits=c(-2,2.6),
                         guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") +
   geom_vline(aes(xintercept=as.Date("2014-11-01")),linetype="dashed") +
-  annotate("text",x=as.Date("2016-06-01"),y=4.5,label=paste0("Study\nPeriod"),size=5) +
+  #annotate("text",x=as.Date("2016-06-01"),y=-1.25,label=paste0("Study\nPeriod"),size=3) +
   geom_vline(aes(xintercept=as.Date("2017-12-01")),linetype="dashed") 
 # geom_segment(aes(x = as.Date("2015-01-01"), y = 2.15, xend = as.Date("2015-10-01"), yend = 2.15), size=0.5,arrow = arrow(length = unit(0.5, "cm")))
 
-ggpubr::ggarrange(g1,g2,ncol=1,nrow=2,align="hv",heights=c(1.25,1),labels="auto", common.legend=T)
-ggsave(paste0(folder_names,ptemp,"/Era5.Anom.Comparison.pdf"),height=10,width=12)
+g2a<-ggplot(era5 %>% filter(Plot=="B13"&year>=2014&year<=2016),aes(Date,tmax_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity",colour="black") + theme_classic() +
+  xlab("Year") + ylab("") + 
+  ggtitle("Quarterly Averaged Maximum Temperature") +
+  #ylim(-5,5)+
+  theme(text=element_text(size=12),legend.title.align=0.5) + 
+  scale_fill_gradient2( low = "blue", mid = "white",
+                        high = "red", midpoint = 0, space = "Lab", limits=c(-2,2.6),
+                        guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") +
+  geom_vline(aes(xintercept=as.Date("2014-01-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2014-11-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2015-11-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2016-11-01")),linetype="dashed")
+  
 
+ggpubr::ggarrange(g1,g1a,g2,g2a,ncol=2,nrow=2,align="hv",widths=c(1.25,1),labels="auto", common.legend=T)
+ggsave(paste0(folder_names,ptemp,"/Era5.Anom.Comparison.tiff"),height=9,width=15)
+
+g3<-ggplot(era5 %>% filter(Plot=="B13"&year>=1981),aes(Date,precip_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity") + theme_classic() +
+  xlab("Year") + ylab("Anomalies [sigma]") + ggtitle("Quarterly Averaged Precipitation") +
+  #ylim(-60,90)+
+  theme(text=element_text(size=12),legend.title.align=0.5) + 
+  scale_fill_gradient2( low = "blue", mid = "white",
+                        high = "red", midpoint = 0, space = "Lab",
+                        guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex",
+                        limits=c(-2,2.6)) +
+  geom_vline(aes(xintercept=as.Date("2014-01-01")),linetype="dashed") +
+  annotate("text",x=as.Date("2015-07-01"),y=1.5,label=paste0("Study\nPeriod"),size=4) +
+  geom_vline(aes(xintercept=as.Date("2016-12-01")),linetype="dashed") 
+#annotate("text",x=as.Date("2017-01-01"),y=90,label=paste0("Year 2"),angle=90)
+
+g3a<-ggplot(era5 %>% filter(Plot=="B13"&year>=2014&year<=2016),aes(Date,precip_anom_sigma_3mo,fill=oni)) + geom_bar(stat="identity",colour="black") + theme_classic() +
+  xlab("Year") + ylab("") + 
+  ggtitle("Quarterly Averaged Precipitation") +
+  #ylim(-60,90)+
+  theme(text=element_text(size=12),legend.title.align=0.5) + 
+  scale_fill_gradient2( low = "blue", mid = "white",
+                        high = "red", midpoint = 0, space = "Lab", limits=c(-2,2.6),
+                        guide = "colourbar", aesthetics = "fill",name="Ocean Nino\nIndex") +
+  geom_vline(aes(xintercept=as.Date("2014-01-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2014-11-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2015-11-01")),linetype="dashed") +
+  geom_vline(aes(xintercept=as.Date("2016-11-01")),linetype="dashed") +
+  annotate("text",x=as.Date("2014-06-01"),y=1,label="Normal Year",size=4) +
+  annotate("text",x=as.Date("2015-06-01"),y=0.9,label="Shock Year\n1",size=4) +
+  annotate("text",x=as.Date("2016-06-01"),y=0.9,label="Shock Year\n2",size=4)
 

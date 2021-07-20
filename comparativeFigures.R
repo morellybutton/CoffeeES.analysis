@@ -1,7 +1,7 @@
 #code to create comparative figures of yield and disease incidence across years
 
 library(tidyverse)
-library(gridExtra)
+#library(gridExtra)
 
 folder_names<-"/Users/AMOREL001/Google Drive/Research/"
 #data folder
@@ -66,7 +66,7 @@ g2<-ggplot(dF[dF$variable=="tmax_flower",],aes(i2014,i2015))+geom_point(aes(colo
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=14)
+    ,text = element_text(size=12)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 g3<-ggplot(dF[dF$variable=="stress_flower",],aes(i2014,i2015))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
@@ -77,7 +77,7 @@ g3<-ggplot(dF[dF$variable=="stress_flower",],aes(i2014,i2015))+geom_point(aes(co
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=14)
+    ,text = element_text(size=12)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 
@@ -155,7 +155,7 @@ g9<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2015))+geom_point(aes(color
 
 
 
-g10<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3)
+g10<-ggpubr::ggarrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3,labels="auto")
 ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2015.pdf"),g10,height=10,width=11)
 ggsave(paste0(folder_names,ptemp,"/ComparativeFigures.2014v2015.tiff"),g10,height=10,width=11)
 
@@ -180,7 +180,7 @@ g2<-ggplot(dF[dF$variable=="tmax_flower",],aes(i2014,i2016))+geom_point(aes(colo
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=14)
+    ,text = element_text(size=12)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 g3<-ggplot(dF[dF$variable=="stress_flower",],aes(i2014,i2016))+geom_point(aes(color=wereda)) +geom_abline(slope=1,intercept=0,linetype="dashed") +
@@ -191,7 +191,7 @@ g3<-ggplot(dF[dF$variable=="stress_flower",],aes(i2014,i2016))+geom_point(aes(co
     ,axis.line.y = element_line(color = 'black')
     ,legend.key = element_rect(colour = "white", fill = NA)
     ,legend.justification=c(0,1), legend.position=c(0,1)
-    ,text = element_text(size=14)
+    ,text = element_text(size=12)
     ,legend.background = element_blank())+scale_color_discrete(name="Wereda")
 
 
@@ -269,7 +269,7 @@ g9<-ggplot(dF[dF$variable=="prop.ldrop",],aes(i2014,i2016))+geom_point(aes(color
 
 
 
-g10<-grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3)
+g10<-ggpubr::ggarrange(g1,g2,g3,g4,g5,g6,g7,g8,g9,ncol=3,nrow=3,labels="auto")
 ggsave(paste0(getwd(),"/Analysis/ES/ComparativeFigures.2014v2016.pdf"),g10,height=10,width=11)
 ggsave(paste0(folder_names,ptemp,"/ComparativeFigures.2014v2016.tiff"),g10,height=10,width=11)
 

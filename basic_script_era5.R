@@ -91,7 +91,7 @@ clim <- left_join(clim,vpd, by=c("Plot","Date","month","year"))
 ppt <- read_csv(paste0(getwd(),"/Analysis/ElNino/ERA5_PPT_YAYU.csv")) %>% 
   select(Plot,Date,mean) %>% 
   mutate(Date=as.Date(Date,format="%d/%m/%Y")) %>% mutate(year=year(Date),month=month(Date)) %>%
-  mutate(ppt=mean*1000) %>% mutate(wd=ppt-100) %>% mutate(wd=replace(wd,wd>0,0)) %>% 
+  mutate(ppt=mean*1000) %>% mutate(wd=ppt-55) %>% mutate(wd=replace(wd,wd>0,0)) %>% 
   select(-mean)
   #gather(key="Plot",value="ppt",-Date,-year,-month)
 tmp <- ppt %>% filter(year>=1980 & year <= 2017) %>% 
