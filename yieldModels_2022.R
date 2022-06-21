@@ -26,17 +26,17 @@ tmp2<- tmp1 %>% filter(year!=2014)
 tmp15<- tmp1 %>% filter(year==2015)
 tmp16<- tmp1 %>% filter(year==2016)
 
-pdf(paste0(getwd(),"/Analysis/ES/Hist.Shrub.kg.allyrs.pdf"))
-hist(tmp1$Shrub.kg)
-dev.off()
+#pdf(paste0(getwd(),"/Analysis/ES/Hist.Shrub.kg.allyrs.pdf"))
+#hist(tmp1$Shrub.kg)
+#dev.off()
 
-pdf(paste0(getwd(),"/Analysis/ES/Hist.Shrub.kg.2014.pdf"))
-hist(tmp14$Shrub.kg, main="Histogram of 2014 Shrub Yields",xlab="Shrub Yield",cex.lab=2,cex.main=2)
-dev.off()
+#pdf(paste0(getwd(),"/Analysis/ES/Hist.Shrub.kg.2014.pdf"))
+#hist(tmp14$Shrub.kg, main="Histogram of 2014 Shrub Yields",xlab="Shrub Yield",cex.lab=2,cex.main=2)
+#dev.off()
 
-pdf(paste0(getwd(),"/Analysis/ES/Hist.Shrub.kg.shockyrs.pdf"))
-hist(tmp2$Shrub.kg, main="Histogram of Shock Year Shrub Yields",xlab="Shrub Yield",cex.lab=2,cex.main=2)
-dev.off()
+#pdf(paste0(getwd(),"/Analysis/ES/Hist.Shrub.kg.shockyrs.pdf"))
+#hist(tmp2$Shrub.kg, main="Histogram of Shock Year Shrub Yields",xlab="Shrub Yield",cex.lab=2,cex.main=2)
+#dev.off()
 
 
 ####Normal Year Analysis
@@ -59,40 +59,14 @@ summary(rm1b) # not significant
 vif(rm1b)
 confint(rm1b, level = .95, method = c("boot"))
 
-
-mod<-rm1b
-#check heteroskedasticity
-diagnos <- data.frame(Resid = resid(mod, type = "pearson"), Fitted = fitted(mod),Variable = tmp14$Plot[!is.na(tmp14$propCLR)], yield=tmp14$Shrub.kg[!is.na(tmp14$propCLR)] )
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_ResidualvFittedValues_2014.pdf"),width=8,height=8)
-d1<-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20)) 
-#dev.off()
-
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_qqplotResiduals_2014.pdf"),width=8,height=8)
-d2<-qqmath(~Resid, data = diagnos, distribution = qnorm, main = list("QQ-Plot", cex = 2), 
-           xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-           panel = function(x, ...) {
-             panel.qqmathline(x, ...)
-             panel.qqmath(x, ...)
-           })
-#dev.off()
-
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_fittedvsobserved_2014.pdf"),width=8,height=8)
-d3<-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
-  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
-  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
-#dev.off()
-ggpubr::ggarrange(d1,d3,d2,ncol=3)
-
-
 #gamma model: 2014 w intercept
 rm1c<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) + rescale(buffer) + rescale(dbh.mn) + rescale(tmax.anom.fruit) +
-           poly(rescale(GapDry),2) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp14)
+           #poly(rescale(GapDry),2) + 
+            rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp14)
 summary(rm1c)
 vif(rm1c)
-confint(rm1c, level = .95, method = c("boot"))
+confint(rm1c, level = .90, method = c("boot"))
 
 #gamma model: 2014 w intercept
 #order of removal, 1)  + rescale(tmax.anom.fruit), 2) + rescale(buffer) , 3)  poly(rescale(GapDry),2),
@@ -103,14 +77,61 @@ rm1d<-glm(Shrub.kg~rescale(elevation)+rescale(patcharea) + rescale(K.meq) +
             rescale(GapDry) + rescale(propCBD) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp14)
 summary(rm1d)
 vif(rm1d)
-ci1<-confint(rm1d, level = .90, method = c("boot"))
 
+ci1<-confint(rm1d, level = .90, method = c("boot"))
 mod1<-rm1d
 MuMIn::r.squaredGLMM(rm1d) #trigamma distribution preferred whenever available
 
 write.csv(ci1,paste0(getwd(),"/Analysis/ES/Normyr_90CIs_v1.csv"))
 
 
+#run dredge to check models, run with summary statistics
+#calculating confidence intervals using Dormann et al (2018)
+options(na.action = "na.fail")
+norm_dd<-MuMIn::dredge(rm1c, extra = list(
+  "R^2", "*" = function(x) {
+    s <- summary(x)
+    c(Rsq = s$r.squared, adjRsq = s$adj.r.squared,
+      F = s$fstatistic[[1]])
+  })
+)
+#subset by AIC < 4
+norm_dd4<- subset(norm_dd, delta < 4)
+
+#write.csv(norm_dd4,paste0(getwd(),"/Analysis/ES/Normyr_dredge_aic4.csv"))
+#remove models that are more complex versions of what is already there
+dd1<-glm(Shrub.kg~rescale(elevation) + rescale(GapDry)  + rescale(propCBB) +
+           rescale(Shannon.i), family  = Gamma(link = "log"),data=tmp14)
+dd2<-glm(Shrub.kg~rescale(elevation) + rescale(GapDry)  + rescale(patcharea) +
+         rescale(Shannon.i), family  = Gamma(link = "log"),data=tmp14)
+dd3<-glm(Shrub.kg~rescale(elevation) + rescale(GapDry) +
+         rescale(Shannon.i) + rescale(tmax.anom.fruit), family  = Gamma(link = "log"),data=tmp14)
+dd4<-glm(Shrub.kg~rescale(elevation) + rescale(GapDry) +
+           rescale(Shannon.i), family  = Gamma(link = "log"),data=tmp14)
+dd5<-glm(Shrub.kg~rescale(elevation) + rescale(Shannon.i),
+         family  = Gamma(link = "log"),data=tmp14)
+
+dd_avg<-MuMIn::model.avg(dd1,dd2,dd3,dd4,dd5)
+#"full model" from above
+dd_full <- glm(Shrub.kg~rescale(elevation) + rescale(GapDry)  + rescale(propCBB) +
+                 rescale(Shannon.i) + rescale(patcharea) +  rescale(tmax.anom.fruit), family  = Gamma(link = "log"),data=tmp14)
+ci1.1<-confint(dd_full, level = .90, method = c("boot"))
+MuMIn::r.squaredGLMM(dd_full) #trigamma distribution preferred whenever available
+
+
+#combine into one data.frame
+tmp<-data.frame(dd_full$coefficients)
+rm_norm<-data.frame(rownames(tmp))
+colnames(rm_norm)<-"variable"
+
+rm_norm$full<-dd_avg$coefficients[1,]
+rm_norm$subset<-dd_avg$coefficients[2,]
+rm_norm$perc5<-ci1.1[,1]
+rm_norm$perc95<-ci1.1[,2]
+
+write.csv(rm_norm,paste0(getwd(),"/Analysis/ES/Normyr_gamma.model_ci.csv"))
+
+mod1<-dd_full
 #check heteroskedasticity
 diagnos <- data.frame(Resid = resid(mod1, type = "pearson"), Fitted = fitted(mod1),Variable = mod1$data$Plot, yield=mod1$data$Shrub.kg)
 #pdf(paste0(getwd(),"/Analysis/ES/Plot.yldgamma_ResidualvFittedValues_2014.pdf"),width=8,height=8)
@@ -134,13 +155,18 @@ d3<-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
   ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
 #dev.off()
 ggpubr::ggarrange(d1,d3,d2,ncol=3)
-ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_gammalogmodel_normalyr.tiff"),height=5,width=15)
-
+ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_gammalogmodel.avg_normalyr.tiff"),height=5,width=15)
+##diagnostic plot for larger model looks more defensible##
 
 #gamma model for all years with intercept
-rm4a<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-           rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) + rescale(buffer) + rescale(dbh.mn) + rescale(tmax.anom.fruit) +
-           poly(rescale(GapDry),2) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp1)
+#rm4a<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
+#           rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) + rescale(buffer) + rescale(dbh.mn) + rescale(tmax.anom.fruit) +
+           #poly(rescale(GapDry),2) + 
+#            rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp1)
+rm4a<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) + factor(year) +
+            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) + rescale(buffer) + rescale(dbh.mn) + rescale(tmax.anom.fruit) +
+            poly(rescale(GapDry),2) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp1)
+
 summary(rm4a)
 vif(rm4a)
 #confint(rm4b)
@@ -159,75 +185,89 @@ vif(rm4b)
 
 MuMIn::r.squaredGLMM(rm4b)
 
-#ci2<-confint(rm4b, level = .95, method = c("boot"), nsim = 500, boot.type = c("basic"))
-confint(rm4b, level = .90, method = c("boot"),
-                         .progress="txt", PBargs=list(style=3))
-#ci4<-confint(ym8, level = .95, method = c("boot"), nsim = 500, boot.type = c("basic"))
-#write.csv(ci2,paste0(getwd(),"/Analysis/ES/Allyrs_90CIs.csv"))
+system.time(ci2.1<-confint(rm4b, level = .90, method = c("boot"),
+                         .progress="txt", PBargs=list(style=3)))
 
-#gamma model all years without intercept** only year relevant for predicting yields
-#order of removal 1) + rescale(tmax.anom.fruit) , 2) + rescale(C.pct), 3) rescale(dbh.mn) +
-#4) + rescale(buffer), 5) rescale(coffee.area.ha) +, 6)  + rescale(propCBD) [VIF too high with year]
-#rm4b<-glmer(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio) + rescale(K.meq) + rescale(buffer) +
-#              rescale(coffee.area.ha) + rescale(C.pct) + rescale(BA.legume)*rescale(Shannon.i) + rescale(dbh.mn) + rescale(tmax.anom.fruit) +
-#              poly(rescale(GapDry),2) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + (1|Plot),family  = Gamma(link = "log"), data=tmp1)
-#summary(rm4b)
-#vif(rm4b)
-#confint(rm4b)
+write.csv(ci2.1,paste0(getwd(),"/Analysis/ES/Allyrs_90CIs_v1.csv"))
 
-#MuMIn::r.squaredGLMM(rm4b)
-
-#ci2<-confint(rm4b, level = .95, method = c("boot"), nsim = 500, boot.type = c("basic"))
-#system.time(ci2<-confint(rm4b, level = .90, method = c("boot"),
-                         #.progress="txt", PBargs=list(style=3)))
-#ci4<-confint(ym8, level = .95, method = c("boot"), nsim = 500, boot.type = c("basic"))
-#write.csv(ci2,paste0(getwd(),"/Analysis/ES/Allyrs_90CIs.csv"))
-
-
-#check heteroskedasticity
-diagnos <- data.frame(yield = rm4b@frame$Shrub.kg, Resid = resid(rm4b, type = "pearson"), Fitted = fitted(rm4b),Variable = rm4b@frame$Plot )
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldgamma_ResidualvFittedValues_2014.pdf"),width=8,height=8)
-d1<-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20)) 
-#dev.off()
-
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldgamma_qqplotResiduals_2014.pdf"),width=8,height=8)
-d2<-qqmath(~Resid, data = diagnos, distribution = qnorm, main = list("QQ-Plot", cex = 2), 
-       xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-#dev.off()
-
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldgamma_fittedvsobserved_2014.pdf"),width=8,height=8)
-d3<-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
-  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
-  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
-#dev.off()
-ggpubr::ggarrange(d1,d3,d2,ncol=3)
-
-
+##diagnostic plots & higher R2 for rm4c###
 #gamma model for all years with intercept and year as factor
 #order of removal 1) + rescale(tmax.anom.fruit), 2) + rescale(propCBD), 3)  + rescale(buffer),
-#4) rescale(elevation)*rescale(patcharea)[added back in], 5)  + rescale(K.meq), 6)  + rescale(dbh.mn),
-#8) rescale(coffee.area.ha) + , 9) rescale(C.pct) + 
-rm4c<-glmer(Shrub.kg~rescale(elevation)*rescale(patcharea) + factor(year) + rescale(CN.ratio) +
-              rescale(BA.legume)*rescale(Shannon.i)  +
-              poly(rescale(GapDry),2) + rescale(propCLR) + rescale(propCBB) + (1|Plot),family  = Gamma(link = "log"), data=tmp1)
+#4) rescale(elevation)*rescale(patcharea), 5)  + rescale(K.meq), 6)  + rescale(dbh.mn),
+#8) rescale(coffee.area.ha) + , 9) rescale(C.pct) + , 10) + rescale(propCLR),
+#10) rescale(BA.legume)*rescale(Shannon.i), 11) poly(rescale(GapDry),2)
+rm4c<-glmer(Shrub.kg~rescale(elevation)+rescale(patcharea) + factor(year) + rescale(CN.ratio) +
+              rescale(BA.legume) + rescale(Shannon.i)  +
+              poly(rescale(GapDry),2) + rescale(propCBB) + (1|Plot),family  = Gamma(link = "log"), data=tmp1)
 summary(rm4c)
 vif(rm4c)
 #confint(rm4b)
 
 MuMIn::r.squaredGLMM(rm4c)
 
-system.time(ci2<-confint(rm4c, level = .90, method = c("boot"),
+system.time(ci2.2<-confint(rm4c, level = .90, method = c("boot"),
                          .progress="txt", PBargs=list(style=3)))
-#write.csv(ci2,paste0(getwd(),"/Analysis/ES/Allyrs_90CIs_v2.csv"))
-          
+write.csv(ci2.2,paste0(getwd(),"/Analysis/ES/Allyrs_90CIs_v2.csv"))
+
+#run dredge to check models, run with summary statistics
+#calculating confidence intervals using Dormann et al (2018)
+options(na.action = "na.fail")
+all_dd<-MuMIn::dredge(rm4a, extra = list(
+  "R^2", "*" = function(x) {
+    s <- summary(x)
+    c(Rsq = s$r.squared, adjRsq = s$adj.r.squared,
+      F = s$fstatistic[[1]])
+  })
+)
+#subset by AIC < 4
+all_dd2<- subset(all_dd, delta < 2)
+
+write.csv(all_dd2,paste0(getwd(),"/Analysis/ES/Allyr_dredge_aic2.csv"))
+
+#remove models that are more complex versions of what is already there
+ad1<-glmer(Shrub.kg~rescale(elevation) + rescale(BA.legume) + rescale(Shannon.i) + factor(year) + 
+           rescale(propCBB) + (1|Plot) ,family  = Gamma(link = "log"),data=tmp1)
+ad2<-glmer(Shrub.kg~rescale(elevation) + rescale(Shannon.i) + factor(year) + 
+           rescale(propCBB) + rescale(C.pct) + (1|Plot) ,family  = Gamma(link = "log"),data=tmp1)
+ad3<-glmer(Shrub.kg~rescale(elevation) + rescale(Shannon.i) + factor(year) + 
+           rescale(propCBB) + (1|Plot), family  = Gamma(link = "log"),data=tmp1)
+ad4<-glmer(Shrub.kg~rescale(elevation) + rescale(BA.legume) + rescale(Shannon.i) + factor(year) + (1|Plot),
+         family  = Gamma(link = "log"),data=tmp1)
+ad5<-glmer(Shrub.kg~rescale(elevation) + factor(year) + rescale(propCBB) +
+        rescale(C.pct) + rescale(dbh.mn) + (1|Plot), family  = Gamma(link = "log"),data=tmp1)
+ad6<-glmer(Shrub.kg~rescale(elevation) + factor(year) + rescale(propCBB) +
+           rescale(C.pct) + (1|Plot), family  = Gamma(link = "log"),data=tmp1)
+ad7<-glmer(Shrub.kg~rescale(elevation) + rescale(BA.legume) + rescale(Shannon.i) + factor(year) + 
+           rescale(CN.ratio) + (1|Plot) ,family  = Gamma(link = "log"),data=tmp1)
+ad8<-glmer(Shrub.kg~rescale(elevation) + rescale(Shannon.i) + factor(year) + (1|Plot),
+         family  = Gamma(link = "log"),data=tmp1)
+
+ad_avg<-MuMIn::model.avg(ad1,ad2,ad3,ad4,ad5,ad6,ad7,ad8)
+
+#"full model" from above
+ad_full <- glmer(Shrub.kg~rescale(elevation) + rescale(BA.legume)  + rescale(propCBB) + factor(year) +
+                 rescale(Shannon.i) + rescale(dbh.mn) +  rescale(C.pct) + rescale(CN.ratio) + (1|Plot), family  = Gamma(link = "log"),data=tmp1)
+system.time(ci2.3<-confint(ad_full, level = .90, method = c("boot"),
+                           .progress="txt", PBargs=list(style=3)))
+write.csv(ci2.3,paste0(getwd(),"/Analysis/ES/Allyrs_90CIs_v3.csv"))
+MuMIn::r.squaredGLMM(ad_full)
+
+#combine into one data.frame
+tmp<-data.frame(summary(ad_full)$coefficients)
+rm_all<-data.frame(rownames(tmp))
+colnames(rm_all)<-"variable"
+
+rm_all$full<-ad_avg$coefficients[1,]
+rm_all$subset<-ad_avg$coefficients[2,]
+rm_all$perc5<-ci2.3[3:nrow(ci2.3),1]
+rm_all$perc95<-ci2.3[3:nrow(ci2.3),2]
+
+write.csv(rm_norm,paste0(getwd(),"/Analysis/ES/Allyr_gamma.model_ci.csv"))
+
+mod2<-rm4c
+
 #check heteroskedasticity
-diagnos <- data.frame(yield = rm4c@frame$Shrub.kg, Resid = resid(rm4c, type = "pearson"), Fitted = fitted(rm4c),Variable = rm4c@frame$Plot )
+diagnos <- data.frame(yield = mod2@frame$Shrub.kg, Resid = resid(mod2, type = "pearson"), Fitted = fitted(mod2),Variable = mod2@frame$Plot )
 #pdf(paste0(getwd(),"/Analysis/ES/Plot.yldgamma_ResidualvFittedValues_2014.pdf"),width=8,height=8)
 d1<-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
   geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
@@ -249,7 +289,7 @@ d3<-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
   ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
 #dev.off()
 ggpubr::ggarrange(d1,d3,d2,ncol=3)
-ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_gammalogmodel_allyrs.tiff"),height=5,width=15)
+ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_gammalogmodel_allyrs_v2.tiff"),height=5,width=15)
 
 
 ###do same model but for shock years
@@ -267,14 +307,14 @@ MuMIn::r.squaredGLMM(rm5a)
 #write.csv(ci4c,paste0(getwd(),"/Analysis/ES/Normalyr_90CIs.csv"))
 #ci4c<-read.csv(paste0(getwd(),"/Analysis/ES/Normalyr_90CIs.csv"))
 
-MuMIn::r.squaredGLMM(rm5a)
+#MuMIn::r.squaredGLMM(rm5a)
 
 
 #2015 & 2016
 #order of removal 1) + rescale(buffer) , 2) rescale(BA.legume)*rescale(Shannon.i), 3) + rescale(CN.ratio)
 #4) + rescale(Shannon.i), 5) + rescale(propCLR), 6) + rescale(propCBD), 7)+ rescale(dbh.mn), 8) rescale(coffee.area.ha) + 
-#9)  + rescale(K.meq)
-rm5b<-glmer(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(C.pct) +
+#9)  + rescale(K.meq), 10) + rescale(C.pct)
+rm5b<-glmer(Shrub.kg~rescale(elevation)*rescale(patcharea)  +
              rescale(BA.legume) + rescale(tmax.anom.fruit) +
               poly(rescale(GapDry),2) + rescale(propCBB)  + (1|Plot),family  = Gamma(link = "log"), data=tmp2)
 summary(rm5b)
@@ -282,12 +322,30 @@ vif(rm5b)
 
 MuMIn::r.squaredGLMM(rm5b)
 
-system.time(ci3<-confint(rm5b, level = .90, method = c("boot"),
+system.time(ci3.1<-confint(rm5b, level = .90, method = c("boot"),
                          .progress="txt", PBargs=list(style=3)))
-write.csv(ci3,paste0(getwd(),"/Analysis/ES/shockyrs_90CIs_v2.csv"))
+write.csv(ci3.1,paste0(getwd(),"/Analysis/ES/shockyrs_90CIs_v1.csv"))
 
+#2015 & 2016
+#take away tmax first 1) + rescale(tmax.anom.fruit), 2) + rescale(buffer), 3) + rescale(K.meq)
+#4)+ rescale(propCLR), 5) + rescale(dbh.mn), 6)  + rescale(CN.ratio) , 7) rescale(coffee.area.ha) + ,
+#8)rescale(BA.legume)*rescale(Shannon.i) , 9) + rescale(Shannon.i)
+rm5c<- glmer(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(C.pct) +
+               rescale(BA.legume)  +
+               poly(rescale(GapDry),2) + rescale(propCBD) + rescale(propCBB)  + (1|Plot),family  = Gamma(link = "log"), data=tmp2)
+
+summary(rm5c)
+vif(rm5c)
+
+MuMIn::r.squaredGLMM(rm5c)
+
+system.time(ci3.2<-confint(rm5c, level = .90, method = c("boot"),
+                         .progress="txt", PBargs=list(style=3)))
+write.csv(ci3.2,paste0(getwd(),"/Analysis/ES/shockyrs_90CIs_v2.csv"))
+
+mod3<-rm5b
 #check heteroskedasticity
-diagnos <- data.frame(yield = rm5b@frame$Shrub.kg, Resid = resid(rm5b, type = "pearson"), Fitted = fitted(rm5b),Variable = as.character(rm5b@frame$Plot) )
+diagnos <- data.frame(yield = mod3@frame$Shrub.kg, Resid = resid(mod3, type = "pearson"), Fitted = fitted(mod3),Variable = as.character(mod3@frame$Plot) )
 #pdf(paste0(getwd(),"/Analysis/ES/Plot.yldgamma_ResidualvFittedValues_2014.pdf"),width=8,height=8)
 d1<-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
   geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
@@ -309,499 +367,185 @@ d3<-ggplot(diagnos, aes(yield,Fitted))+geom_point() +
   ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
 #dev.off()
 ggpubr::ggarrange(d1,d3,d2,ncol=3)
-ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_gammalogmodel_shockyrs.tiff"),height=5,width=15)
+ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_gammalogmodel_shockyrs_v1.tiff"),height=5,width=15)
 
-#2015
-rm4d<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio)  + rescale(K.meq) +
-            rescale(BA.legume)*rescale(Shannon.i) + 
-            poly(rescale(GapDry),2) + rescale(propCBB) + rescale(propCLR) - 1,family  = Gamma(link = "log"), data=tmp15)
-summary(rm4d)
-vif(rm4d)
-confint(rm4d, method="boot")
+###############################################################
+#####create figures of significant models####
+#Normal Year
+mod1<-glm(Shrub.kg~rescale(elevation)+rescale(patcharea) + rescale(K.meq) +
+            rescale(BA.legume)*rescale(Shannon.i) +
+            rescale(GapDry) + rescale(propCBD) + rescale(propCBB) ,family  = Gamma(link = "log"),data=tmp14)
 
-MuMIn::r.squaredGLMM(rm4c)
+ci1<-read.csv(paste0(getwd(),"/Analysis/ES/Normyr_90CIs_v1.csv"))
 
-#2016
-rm4e<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio)  + rescale(K.meq) +
-            rescale(BA.legume)*rescale(Shannon.i) + 
-            poly(rescale(GapDry),2) + rescale(propCBB) + rescale(propCLR) - 1,family  = Gamma(link = "log"), data=tmp16)
-summary(rm4e)
-vif(rm4e)
-confint(rm4e, method="boot")
+mod1.glm<-as.data.frame(summary(mod1)$coefficients)
+colnames(mod1.glm)<-c("Coefficients","Std_error","t_value","p_value")
 
-MuMIn::r.squaredGLMM(rm4c)
+#add confidenct intervals
+mod1.glm$CI.5 <- ci1[,2]
+mod1.glm$CI.95 <- ci1[,3]
+mod1.glm$Comparison<-rownames(mod1.glm)
+rownames(mod1.glm)<-1:nrow(mod1.glm)
 
-#both shock years
-rm4f<-glmer(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio)  + rescale(K.meq) +
-            rescale(BA.legume)*rescale(Shannon.i) + 
-            poly(rescale(GapDry),2) + rescale(propCBB) + rescale(propCLR) - 1 + (1|Plot),family  = Gamma(link = "log"), data=tmp2)
-summary(rm4f)
-vif(rm4f)
-system.time(ci4f<-confint(rm4f, level = .90, method = c("boot"),
-                         .progress="txt", PBargs=list(style=3)))
-write.csv(ci4f,paste0(getwd(),"/Analysis/ES/Shockyrs_90CIs.csv"))
-
-MuMIn::r.squaredGLMM(rm4f)
-
-#guassian loglink model
-rm3<-glm(Shrub.kg~rescale(elevation)*rescale(patcharea) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-           rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) + rescale(buffer) + rescale(dbh.mn) + rescale(tmax.anom.fruit) +
-           rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB),family  = gaussian(link = "log"), data=tmp14)
-summary(rm3)
-
-MuMIn::r.squaredGLMM(rm3)
-#check multicollinearity
-vif(rm3)
-
-
-#create figure of diagnostic figures
-ggpubr::ggarrange(d1,d3,d2,ncol=3)
-ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_lmmodel_normalyr.tiff"),height=5,width=15)
-
-#create figures of significant models
-x.glm<-as.data.frame(summary(rm2)$coefficients)
-colnames(x.glm)<-c("Coefficients","Std_error","t_value","p_value")
-
-ci1<-confint(rm2, level = .95, method = c("boot"), nsim = 500, boot.type = c("basic"))
-
-x.glm$CI.2.5 <- ci1[,1]
-x.glm$CI.97.5 <- ci1[,2]
-x.glm$Comparison<-rownames(x.glm)
-rownames(x.glm)<-1:nrow(x.glm)
-
-x.glm <- x.glm %>% mutate(p_value=replace(p_value,p_value>0.05,"NS")) %>% 
-  mutate(sig=0) %>% mutate(sig=replace(sig,p_value=="NS",1))
-x.glm$Labels <- c("Intercept","Elevation","Patch Area","Soil\nPotassium Content","Basal Area of\nLeguminous Trees",
-                    "Shade Diversity","Soil C:N","Soil\nCarbon Content","Canopy Gap","Coffee Berry\nDisease",
+#mod1.glm <- mod1.glm %>% mutate(p_value=replace(p_value,p_value>0.05,"NS")) %>% 
+#  mutate(sig=0) %>% mutate(sig=replace(sig,p_value=="NS",1))
+mod1.glm$Labels <- c("Intercept","Elevation","Patch Area","Soil\nPotassium Content","Basal Area of\nLeguminous Trees",
+                    "Shade Diversity","Canopy Gap","Coffee Berry\nDisease","Coffee Berry\nBorer",
                     "Shade Diversity:\nLeguminous Trees")
 #add in labels for colors & shapes
-x.glm$shades<-c("Disease/Other","Landscape","Landscape","Soil","Shade Management","Shade Management","Soil","Soil",
-                "Shade Management","Disease/Other","Shade Management")
+mod1.glm$shades<-c("Disease/Other","Landscape","Landscape","Soil","Shade Management","Shade Management",
+                "Shade Management","Disease/Other","Disease/Other","Shade Management")
 
-x.glm$shapes<-c("Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Year","Fixed")
+mod1.glm$shapes<-c("Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Year","Year","Fixed")
 
 #order by size of effect and Importance factor
-x.glm <- x.glm %>% arrange(desc(abs(t_value))) %>% 
-  mutate(Importance=1:nrow(x.glm))
+mod1.glm <- mod1.glm %>% arrange(desc(abs(t_value))) %>% 
+  mutate(Importance=1:nrow(mod1.glm))
 
-#write.csv(x.glm,paste0(getwd(),"/Analysis/ES/Finalmodel_yldgamma.csv"))
-#write.csv(x.glm,paste0(getwd(),"/Analysis/ES/Finalmodel_yldlm.csv"))
-x.glm<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldlm.csv"))
+#write.csv(mod1.glm,paste0(getwd(),"/Analysis/ES/Finalmodel_yldgamma_normyr.csv"))
+mod1.glm<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldgamma_normyr.csv"))
 
-x.glm$Labels<-factor(x.glm$Labels,levels=x.glm[order(x.glm$Importance,decreasing=T),"Labels"])
-x.glm$shades<-factor(x.glm$shades,levels=c("Landscape","Shade Management","Soil","Disease/Other"),ordered=T)
+mod1.glm$Labels<-factor(mod1.glm$Labels,levels=mod1.glm[order(mod1.glm$Importance,decreasing=T),"Labels"])
+mod1.glm$shades<-factor(mod1.glm$shades,levels=c("Landscape","Shade Management","Soil","Disease/Other"),ordered=T)
 #x.lm$sig<-factor(x.lm$sig, levels=c(0,1),labels=c("Significant","NS"))
 
-#remove intercept
-x.glm<-x.glm %>% filter(Labels!="Intercept")
-r.glm<-MuMIn::r.squaredGLMM(rm2)
+mod1_r2<-MuMIn::r.squaredGLMM(mod1) #trigamma distribution preferred whenever available
 
-g1<-ggplot(x.glm, aes(x = Labels, y = Coefficients, ymin = CI.2.5, ymax = CI.97.5)) + 
+g1<-ggplot(mod1.glm, aes(x = Labels, y = Coefficients, ymin = CI.5, ymax = CI.95)) + 
   geom_errorbar(width=0.2,aes(color=factor(shades))) + 
   geom_point(size=5,aes(color=factor(shades),shape=factor(shapes))) + scale_color_viridis_d() +
   scale_shape_manual(values = c(15, 16)) +
   theme(taxis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Normal Year")+
   xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed") + theme_classic() + 
-  annotate("text",x=0.75,y=-0.5,label=paste("R^2 == ",signif(r.glm[1,1], 3)),angle=0,size=5,parse=T) +
+  annotate("text",x=0.75,y=-0.5,label=paste("R^2 == ",signif(mod1_r2[3,2], 3)),angle=0,size=5,parse=T) +
   theme(axis.text.x=element_text(angle = 45,hjust=1),legend.position="right",legend.title=element_blank(),
         plot.title = element_text(hjust = 0.5)) + theme(text = element_text(size = 20))
 
 g2<-g1+coord_flip()
 g2
-ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldlm.tiff"),height=10,width=9)
+ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldgammlog_normyr.tiff"),height=10,width=9)
 #ggsave("/users/alex/Documents/Research/Africa/ECOLIMITS/Pubs/ElNino/Coffee_ES/Landscape/AnalysisFigures/Model_results_yld14.v4.pdf",height=6,width=6)
 
 
-###################################################################
 ###################################################
 ###Yield shock years
+mod2<-glmer(Shrub.kg~rescale(elevation)*rescale(patcharea)  +
+              rescale(BA.legume) + rescale(tmax.anom.fruit) +
+              poly(rescale(GapDry),2) + rescale(propCBB)  + (1|Plot),family  = Gamma(link = "log"), data=tmp2)
+
+ci2<-read.csv(paste0(getwd(),"/Analysis/ES/shockyrs_90CIs_v1.csv"))
+
+mod2.glm<-as.data.frame(summary(mod2)$coefficients)
+colnames(mod2.glm)<-c("Coefficients","Std_error","t_value","p_value")
+mod2.glm$Comparison<-rownames(mod2.glm)
+rownames(mod2.glm)<-1:nrow(mod2.glm)
 
 
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yld201516_lnorm.pdf"),width=8,height=8)
-qqp(tmp2$Shrub.kg, "lnorm")
-dev.off()
-
-
-#add 2014 yield to datasets
-tmp14 <- tmp14 %>% mutate(norm.yld=Shrub.kg)
-
-tmp2<- left_join(tmp2,tmp14 %>% dplyr::select(Plot,norm.yld), by="Plot")
-
-tmp2$year<-factor(tmp2$year)
-#linear model
-#tmp1<-d.F.plot %>% filter(!is.na(Shrub.kg)&Shrub.kg>0&!is.na(dbh.mn)&!is.na(propCLR))
-ym1<-lmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(elevation)*rescale(patcharea) + rescale(norm.yld) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-            rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) +  rescale(BA.legume)*factor(year) + rescale(Shannon.i)*factor(year)+ rescale(buffer) + rescale(dbh.mn) +
-            poly(rescale(GapDry),2)*factor(year) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+(1|Plot),data=tmp2)
-summary(ym1)
-MuMIn::r.squaredGLMM(ym1)
-
-#check multicollinearity
-vif(ym1)
-
-#check heteroskedasticity
-
-diagnos <- data.frame(Resid = resid(ym1), Fitted = fitted(ym1),Variable = tmp2$Plot[!is.na(tmp2$norm.yld)])
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_ResidualvFittedValues_shock.v1.pdf"),width=8,height=8)
-ggplot(diagnos, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20))
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_qqplotResiduals_shock.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
-       xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#glm gaussian loglink
-ym2<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(elevation)*rescale(patcharea) + rescale(norm.yld) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-             rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) +  rescale(BA.legume)*factor(year) + rescale(Shannon.i)*factor(year)+ rescale(buffer) + rescale(dbh.mn) +
-             poly(rescale(GapDry),2)*factor(year) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + (1|Plot),family="gaussian"(link='log'),data=tmp2)
-summary(ym2)
-MuMIn::r.squaredGLMM(ym2)
-#check multicollinearity
-vif(ym2)
-
-
-#check heteroskedasticity
-diagnos2 <- data.frame(Resid = resid(ym2, type = "pearson"), Fitted = fitted(ym2),Variable = tmp2$Plot[!is.na(tmp2$norm.yld)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgaussloglink_ResidualvFittedValues_shock.v1.pdf"),width=8,height=8)
-ggplot(diagnos2, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw() + theme(text = element_text(size = 20))
-
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgaussloglink_qqplotResiduals_shock.v1.pdf"),width=8,height=8)
-qqmath(~Resid, data = diagnos2, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
-       xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#glm gaussian loglink
-#order of removal: 1) + rescale(CN.ratio), 2) rescale(coffee.area.ha) +, 3) + rescale(patcharea)*factor(year), 4)  poly(rescale(GapDry),2)*factor(year),
-#5) + rescale(BA.legume)*factor(year), 6)  + rescale(propCBB), 7) + rescale(buffer), 8) + rescale(Shannon.i)*factor(year),
-#9) + rescale(norm.yld), 10) + rescale(dbh.mn), 11) rescale(BA.legume)*rescale(Shannon.i), 12) + rescale(K.meq)  
-ym2b<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(elevation)*rescale(patcharea) + rescale(C.pct) +
-              rescale(BA.legume)*rescale(Shannon.i) +
-              rescale(GapDry)*factor(year) + rescale(propCBD) + rescale(propCLR) + (1|Plot),family="gaussian"(link='log'),data=tmp2)
-summary(ym2b)
-MuMIn::r.squaredGLMM(ym2b)
-#check multicollinearity
-vif(ym2b)
-
-
-#glm gamma loglink
-ym3<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(elevation)*rescale(patcharea) + rescale(norm.yld) + rescale(CN.ratio) + rescale(C.pct) + rescale(K.meq) +
-             rescale(coffee.area.ha) + rescale(BA.legume)*rescale(Shannon.i) +  rescale(BA.legume)*factor(year) + rescale(Shannon.i)*factor(year)+ rescale(buffer) + rescale(dbh.mn) +
-             poly(rescale(GapDry),2)*factor(year) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) +(1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(ym3)
-MuMIn::r.squaredGLMM(ym3)
-
-#check multicollinearity
-vif(ym3)
-
-#check heteroskedasticity
-diagnos3 <- data.frame(Resid = resid(ym3, type = "pearson"), Fitted = fitted(ym3),Variable = tmp2$Plot[!is.na(tmp2$norm.yld)] )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgammaloglink_ResidualvFittedValues_shock.v1.pdf"),width=8,height=8)
-d1<-ggplot(diagnos3, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20))
-
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgammaloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-d2<-qqmath(~Resid, data = diagnos3, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
-       xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-dev.off()
-
-#glm gamma loglink
-#order removed 1) rescale(elevation)*rescale(patcharea), 2) + rescale(buffer), 3) rescale(coffee.area.ha) + 4) + rescale(propCBD) 
-#5) + rescale(CN.ratio) , 6)  + rescale(dbh.mn) , 7) rescale(GapDry) + , 8) rescale(propCLR) + 9)  rescale(BA.legume)*rescale(year)*rescale(Shannon.i),
-#10) + rescale(K.meq) 
-ym4<-glmer(Shrub.kg~rescale(elevation)*rescale(year) + rescale(patcharea)*rescale(year) + rescale(norm.yld) + rescale(C.pct) +
-            rescale(BA.legume)*rescale(year)+rescale(Shannon.i)*rescale(year)  + 
-            rescale(propCBB)+(1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(ym4)
-vif(ym4)
-r.gamma<-MuMIn::r.squaredGLMM(ym4)
-
-#model assessment
-diagnos4 <- data.frame(yield = ym4@frame$Shrub.kg, Fitted = fitted(ym4),Variable = ym4@frame$Plot )
-tiff(paste0(getwd(),"/Analysis/ES/Plot.yldlm_fittedvsobserved_shockyrs.tiff"))
-d3<-ggplot(diagnos4, aes(yield,Fitted))+geom_point() +
-  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
-  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
-dev.off()
-
-
-#simplified full model
-ym5<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(CN.ratio) + rescale(norm.yld) + rescale(C.pct) + rescale(K.meq) +
-             rescale(coffee.area.ha) + rescale(BA.legume)*factor(year)+rescale(Shannon.i)*factor(year) + rescale(buffer) + rescale(dbh.mn) +
-             rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+factor(year) + (1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(ym5)
-MuMIn::r.squaredGLMM(ym5)
-
-#check heteroskedasticity
-diagnos3 <- data.frame(Resid = resid(ym5, type = "pearson"), Fitted = fitted(ym5),Variable = ym5@frame$Plot  )
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgammaloglink_ResidualvFittedValues_shock.v1.pdf"),width=8,height=8)
-d1<-ggplot(diagnos3, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20))
-
-dev.off()
-
-pdf(paste0(getwd(),"/Analysis/ES/Plot.yldglmgammaloglink_qqplotResiduals_all.v1.pdf"),width=8,height=8)
-d2<-qqmath(~Resid, data = diagnos3, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
-           xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-           panel = function(x, ...) {
-             panel.qqmathline(x, ...)
-             panel.qqmath(x, ...)
-           })
-dev.off()
-
-#model assessment
-diagnos5 <- data.frame(yield = ym5@frame$Shrub.kg, Fitted = fitted(ym5),Variable = ym5@frame$Plot )
-tiff(paste0(getwd(),"/Analysis/ES/Plot.yldglm_fittedvsobserved_shockyrs.tiff"))
-d3<-ggplot(diagnos5, aes(yield,Fitted))+geom_point() +
-  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
-  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
-dev.off()
-
-#simplified full model
-#glm gamma loglink
-#order removed 1) + rescale(buffer), 2) rescale(coffee.area.ha) + 3) rescale(GapDry) + 4) + rescale(dbh.mn) , 5) + rescale(CN.ratio)
-#6) rescale(propCBD) + , 7)  + rescale(K.meq)
-ym6<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year)  + rescale(norm.yld)  +
-             rescale(BA.legume)*factor(year)+rescale(Shannon.i)*factor(year) + rescale(C.pct) +
-             rescale(propCLR) + rescale(propCBB)+factor(year) + (1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(ym6)
-MuMIn::r.squaredGLMM(ym6)
-
-
-#simplified full model
-#glm gamma loglink
-#order removed 1) poly(rescale(GapDry),2)*factor(year), 2) + rescale(buffer), 3) + rescale(dbh.mn), 4) poly(rescale(GapDry),
-#5) + rescale(elevation)*rescale(patcharea), 6) rescale(GapDry) +, 7)  + rescale(Shannon.i)*factor(year), 8)  rescale(coffee.area.ha) +,
-#9) + rescale(CN.ratio), 10) + rescale(GapDry), 11)  + rescale(norm.yld), 12) + rescale(propCLR)
-ym6b<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(C.pct) + rescale(K.meq) +
-             rescale(BA.legume)*factor(year) +  + rescale(BA.legume)*rescale(Shannon.i) +
-              rescale(propCBD) + rescale(propCBB) + (1|Plot),family="Gamma"(link='log'),data=tmp2)
-summary(ym6b)
-MuMIn::r.squaredGLMM(ym6b)
-vif(ym6b)
-
-#Explore linear model
-#order removed 1) poly(rescale(GapDry),2)*factor(year), 2) + rescale(CN.ratio), 3) + rescale(BA.legume)*rescale(Shannon.i),
-#4) rescale(Shannon.i)*factor(year), 5) + rescale(buffer), 6) rescale(elevation)*rescale(patcharea) +, 7) rescale(coffee.area.ha) +,
-#8) + rescale(Shannon.i)
-ym7<-lmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(norm.yld) + rescale(C.pct) + rescale(K.meq) +
-            rescale(BA.legume)*factor(year) + rescale(dbh.mn) +
-            poly(rescale(GapDry),2) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB)+(1|Plot),data=tmp2)
-summary(ym7)
-MuMIn::r.squaredGLMM(ym7)
-
-#check multicollinearity
-vif(ym7)
-
-#Explore gamma loglink without intercept
-#order of removal: 1) poly(rescale(GapDry),2)*factor(year), 2) + rescale(buffer), 3) poly(rescale(GapDry),2)
-#4) + rescale(dbh.mn), 5) + rescale(elevation)*rescale(patcharea), 6) + rescale(BA.legume)*rescale(Shannon.i)
-#7) rescale(GapDry) +, 8) rescale(coffee.area.ha) +, 9) rescale(propCBD) +, 10) + rescale(CN.ratio)
-#11) + rescale(norm.yld)  
-ym8<-glmer(Shrub.kg~rescale(elevation)*factor(year) + rescale(patcharea)*factor(year) + rescale(C.pct) + rescale(K.meq) +
-             rescale(BA.legume)*factor(year) + rescale(Shannon.i)*factor(year) +
-             rescale(propCLR) + rescale(propCBB) +(1|Plot) - 1,family="Gamma"(link='log'),data=tmp2)
-summary(ym8)
-MuMIn::r.squaredGLMM(ym8)
-
-#check multicollinearity
-vif(ym8)
-
-#check heteroskedasticity
-
-diagnos8 <- data.frame(Resid = resid(ym8), Fitted = fitted(ym8), Variable = ym8@frame$Plot)
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_ResidualvFittedValues_shock.v2.pdf"),width=8,height=8)
-d1<-ggplot(diagnos8, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20))
-#dev.off()
-
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_qqplotResiduals_shock.v2.pdf"),width=8,height=8)
-d2<-qqmath(~Resid, data = diagnos8, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
-       xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-       panel = function(x, ...) {
-         panel.qqmathline(x, ...)
-         panel.qqmath(x, ...)
-       })
-#dev.off()
-
-diagnos9 <- data.frame(yield = ym8@frame$Shrub.kg, Fitted = fitted(ym8),Variable = ym8@frame$Plot )
-#tiff(paste0(getwd(),"/Analysis/ES/Plot.yldglm_fittedvsobserved_shockyrs.tiff"))
-d3<-ggplot(diagnos9, aes(yield,Fitted))+geom_point() +
-  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
-  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
-#dev.off()
-
-#create figure of diagnostic figures
-ggpubr::ggarrange(d1,d3,d2,ncol=3)
-
-#Explore gamma loglink without intercept and without year
-#order of removal: 1) + rescale(buffer), 2)  + rescale(C.pct), 3) + rescale(dbh.mn),
-#4) + rescale(propCBD), 5)  rescale(coffee.area.ha) +, 6) + rescale(propCLR), 7) + rescale(K.meq)
-#8) poly(rescale(GapDry),2)
-ym9<-glmer(Shrub.kg~rescale(elevation) + factor(year) + rescale(patcharea) + rescale(norm.yld) + rescale(CN.ratio) +
-             rescale(BA.legume) + rescale(Shannon.i) +
-             rescale(GapDry) + rescale(propCBB) + (1|Plot) - 1,family="Gamma"(link='log'),data=tmp2)
-summary(ym9)
-MuMIn::r.squaredGLMM(ym9)
-
-#check multicollinearity
-vif(ym9)
-
-#check heteroskedasticity
-
-diagnos9 <- data.frame(Resid = resid(ym9), Fitted = fitted(ym9), Variable = ym9@frame$Plot)
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_ResidualvFittedValues_shock.v2.pdf"),width=8,height=8)
-d1<-ggplot(diagnos9, aes(Fitted, Resid))+geom_point() +stat_smooth(method="loess")+
-  geom_hline(yintercept=0, col="red", linetype="dashed") +xlab("Fitted values")+ylab("Residuals") +
-  ggtitle("Residual vs Fitted Plot")+theme_bw()  + theme(text = element_text(size = 20))
-#dev.off()
-
-#pdf(paste0(getwd(),"/Analysis/ES/Plot.yldlm_qqplotResiduals_shock.v2.pdf"),width=8,height=8)
-d2<-qqmath(~Resid, data = diagnos9, distribution = qnorm,  main = list("QQ-Plot", cex = 2), 
-           xlab = list(cex = 2), ylab = list(cex = 2), prepanel = prepanel.qqmathline,
-           panel = function(x, ...) {
-             panel.qqmathline(x, ...)
-             panel.qqmath(x, ...)
-           })
-#dev.off()
-
-diagnos9 <- data.frame(yield = ym9@frame$Shrub.kg, Fitted = fitted(ym9),Variable = ym9@frame$Plot )
-#tiff(paste0(getwd(),"/Analysis/ES/Plot.yldglm_fittedvsobserved_shockyrs.tiff"))
-d3<-ggplot(diagnos9, aes(yield,Fitted))+geom_point() +
-  geom_abline(yintercept=0, slope=1, col="red", linetype="dashed") +xlab("Observed values")+ylab("Predicted Values") +
-  ggtitle("Model Assessment")+theme_bw() + xlim(0,1.5) + ylim(0,1.5) + theme(text = element_text(size = 20)) 
-#dev.off()
-
-#create figure of diagnostic figures
-ggpubr::ggarrange(d1,d3,d2,ncol=3)
-
-ggsave(paste0(folder_names,ptemp,"/Diagnosticfigures_model_shockyrs.tiff"),height=5,width=15)
-
-#create figures of significant models
-x.gamma<-as.data.frame(summary(ym9)$coefficients)
-colnames(x.gamma)<-c("Coefficients","Std_error","t_value","p_value")
-x.gamma$Comparison<-rownames(x.gamma)
-rownames(x.gamma)<-1:nrow(x.gamma)
-
-ci0 <- confint(ym9,method="Wald")
-#ci1 <- confint(ym8)
-system.time(ci4<-confint(ym9, level = .95, method = c("boot"),
-                            .progress="txt", PBargs=list(style=3)))
-#ci4<-confint(ym8, level = .95, method = c("boot"), nsim = 500, boot.type = c("basic"))
-
-x.gamma$CI.97.5 <- ci4[3:12,2]
-x.gamma$CI.2.5 <- ci4[3:12,1]
+mod2.glm$CI.95 <- ci2[3:nrow(ci2),3]
+mod2.glm$CI.5 <- ci2[3:nrow(ci2),2]
 
 #x.gamma <- x.gamma %>% mutate(p_value=replace(p_value,p_value>0.05,"NS")) %>% 
  # mutate(sig=0) %>% mutate(sig=replace(sig,p_value=="NS",1))
-x.gamma$Labels <- c("Elevation","Year(2015)","Year(2016)","Patch Area","Yield in\nNormal Year","Soil C:N",
-                    "Basal Area of\nLeguminous Trees","Shade Diversity","Canopy Gap","Coffee\nBerry Borer")
+mod2.glm$Labels <- c("Intercept","Elevation","Patch Area","Basal Area of\nLeguminous Trees","Max Temperature\nFruiting","Canopy Gap","Canopy Gap^2",
+                   "Coffee\nBerry Borer","Elevation:Patch Area")
 #add in labels for colors & shapes
-x.gamma$shades<-c("Landscape","Disease/Other","Disease/Other","Landscape","Disease/Other","Soil","Shade Management","Shade Management","Shade Management",
-                  "Disease/Other")
+mod2.glm$shades<-c("Disease/Other","Landscape","Landscape","Shade Management","Disease/Other","Shade Management","Shade Management","Disease/Other","Landscape")
 
-x.gamma$shapes<-c("Fixed","Year","Year","Fixed","Fixed","Fixed","Fixed","Fixed","Fixed","Year")
+mod2.glm$shapes<-c("Fixed","Fixed","Fixed","Fixed","Year","Fixed","Fixed","Year","Fixed")
 
 #order by size of effect and Importance factor
-x.gamma <- x.gamma %>% arrange(desc(abs(t_value))) %>% 
-  mutate(Importance=1:nrow(x.gamma))
+mod2.glm <- mod2.glm %>% arrange(desc(abs(t_value))) %>% 
+  mutate(Importance=1:nrow(mod2.glm))
 
-#write.csv(x.gamma,paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgammaloglink.csv"))
-#write.csv(x.gamma,paste0(getwd(),"/Analysis/ES/Finalmodel_yldglm.csv"))
-#x.gamma<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldglm.csv"))
+#write.csv(mod2.glm,paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgammaloglink_shockyrs.csv"))
+mod2.glm<-read.csv(paste0(getwd(),"/Analysis/ES/inalmodel_yldglmgammaloglink_shockyrs.csv"))
 
-x.gamma$Labels<-factor(x.gamma$Labels,levels=x.gamma[order(x.gamma$Importance,decreasing=T),"Labels"])
-x.gamma$shades<-factor(x.gamma$shades,levels=c("Landscape","Shade Management","Soil","Disease/Other"),ordered=T)
+mod2.glm$Labels<-factor(mod2.glm$Labels,levels=mod2.glm[order(mod2.glm$Importance,decreasing=T),"Labels"])
+mod2.glm$shades<-factor(mod2.glm$shades,levels=c("Landscape","Shade Management","Soil","Disease/Other"),ordered=T)
 
-#remove intercept
-x.gamma<-x.gamma %>% filter(Labels!="Intercept")
-r.gamma <- MuMIn::r.squaredGLMM(ym9)
+mod2_r2<-MuMIn::r.squaredGLMM(mod2)
 
-g3<-ggplot(x.gamma, aes(x = Labels, y = Coefficients, ymin = CI.2.5, ymax = CI.97.5)) + 
+g3<-ggplot(mod2.glm, aes(x = Labels, y = Coefficients, ymin = CI.5, ymax = CI.95)) + 
   geom_errorbar(width=0.2,aes(color=factor(shades))) + 
   geom_point(size=5,aes(shape=factor(shapes),color=factor(shades))) + scale_color_viridis_d() +
   scale_shape_manual(values = c(15, 16)) +
   theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("Shock Years")+
   xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
   theme(axis.text.x=element_text(angle = 45,hjust=1),plot.title = element_text(hjust = 0.5),legend.position="right",legend.title=element_blank()) +
-  annotate("text",x=1,y=-2.0,label=paste("R^2 == ",signif(r.gamma[1,1], 3)),angle=0,size=5,parse=T) + theme(text = element_text(size = 20))
+  annotate("text",x=1,y=-2.0,label=paste("R^2 == ",signif(mod2_r2[3,2], 3)),angle=0,size=5,parse=T) + theme(text = element_text(size = 20))
 
 g4<-g3+coord_flip()
 g4
-ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldglm.tiff"),height=10,width=9)
+ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldglm_shockyrs.tiff"),height=10,width=9)
+
+###################################################
+###All years
+mod3<-glmer(Shrub.kg~rescale(elevation)+rescale(patcharea) + factor(year) + rescale(CN.ratio) +
+              rescale(BA.legume) + rescale(Shannon.i)  +
+              poly(rescale(GapDry),2) + rescale(propCBB) + (1|Plot),family  = Gamma(link = "log"), data=tmp1)
+
+ci3<-read.csv(paste0(getwd(),"/Analysis/ES/Allyrs_90CIs_v2.csv"))
+
+mod3.glm<-as.data.frame(summary(mod3)$coefficients)
+colnames(mod3.glm)<-c("Coefficients","Std_error","t_value","p_value")
+mod3.glm$Comparison<-rownames(mod3.glm)
+rownames(mod3.glm)<-1:nrow(mod3.glm)
+
+
+mod3.glm$CI.95 <- ci3[3:nrow(ci3),3]
+mod3.glm$CI.5 <- ci3[3:nrow(ci3),2]
+
+#x.gamma <- x.gamma %>% mutate(p_value=replace(p_value,p_value>0.05,"NS")) %>% 
+# mutate(sig=0) %>% mutate(sig=replace(sig,p_value=="NS",1))
+mod3.glm$Labels <- c("Intercept","Elevation","Patch Area","Year(2015)","Year(2016)","Soil C:N","Basal Area of\nLeguminous Trees","Shade Diversity","Canopy Gap","Canopy Gap^2",
+                     "Coffee\nBerry Borer")
+#add in labels for colors & shapes
+mod3.glm$shades<-c("Disease/Other","Landscape","Landscape","Disease/Other","Disease/Other","Soil","Shade Management","Shade Management","Shade Management","Shade Management","Disease/Other")
+
+mod3.glm$shapes<-c("Fixed","Fixed","Fixed","Year","Year","Fixed","Fixed","Fixed","Fixed","Fixed","Year")
+
+#order by size of effect and Importance factor
+mod3.glm <- mod3.glm %>% arrange(desc(abs(t_value))) %>% 
+  mutate(Importance=1:nrow(mod3.glm))
+
+#write.csv(mod3.glm,paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgammaloglink_allyrs.csv"))
+mod3.glm<-read.csv(paste0(getwd(),"/Analysis/ES/Finalmodel_yldglmgammaloglink_allyrs.csv"))
+
+mod3.glm$Labels<-factor(mod3.glm$Labels,levels=mod3.glm[order(mod3.glm$Importance,decreasing=T),"Labels"])
+mod3.glm$shades<-factor(mod3.glm$shades,levels=c("Landscape","Shade Management","Soil","Disease/Other"),ordered=T)
+
+mod3_r2<-MuMIn::r.squaredGLMM(mod3)
+
+g5<-ggplot(mod3.glm, aes(x = Labels, y = Coefficients, ymin = CI.5, ymax = CI.95)) + 
+  geom_errorbar(width=0.2,aes(color=factor(shades))) + 
+  geom_point(size=5,aes(shape=factor(shapes),color=factor(shades))) + scale_color_viridis_d() +
+  scale_shape_manual(values = c(15, 16)) +
+  theme(text = element_text(size=16),axis.text.x = element_text(angle=90, vjust=1)) +ggtitle("All Years")+
+  xlab("Variable [ranked by significance]")+ylab("Effect Size") + geom_hline(yintercept = 0, linetype="dashed")+theme_classic() +
+  theme(axis.text.x=element_text(angle = 45,hjust=1),plot.title = element_text(hjust = 0.5),legend.position="right",legend.title=element_blank()) +
+  annotate("text",x=1,y=-1.0,label=paste("R^2 == ",signif(mod3_r2[3,2], 3)),angle=0,size=5,parse=T) + theme(text = element_text(size = 20))
+
+g6<-g5+coord_flip()
+g6
+ggsave(paste0(getwd(),"/Analysis/ES/Finalmodel_results_yldglm_allyrs.tiff"),height=10,width=9)
 
 library(ggpubr)
 #create overall title
 #text <- "Landscape and Management Influences on Yield"
 
 # Create a text grob
-##tgrob <- text_grob(text,size = 24)
+#tgrob <- text_grob(text,size = 24)
 # Draw the text
-plot_0 <- as_ggplot(tgrob) + theme(plot.margin = margin(0,2,0,2, "cm"))
+#plot_0 <- as_ggplot(tgrob) + theme(plot.margin = margin(0,2,0,2, "cm"))
 
 #ggarrange(plot_0,NULL,g2, g4,
 #          ncol =2,nrow = 2,heights = c(1,5),common.legend=T,legend=c("bottom"),labels="auto")
 
-ggarrange(g2, g4, ncol =2,common.legend=T,legend=c("bottom"),labels="auto",
+ggarrange(g6, g2, g4, ncol =3,common.legend=T,legend=c("bottom"),labels="auto",
           font.label = list(size = 18, color = "black", face = "bold", family = NULL),
           label.x=0.2)
 
-ggsave(paste0(folder_names,ptemp,"Finalmodel_results_comboplots.tiff"),height=10.5,width=16)
-
-###################################################################
-###################################################
-####All Year analysis
-#gamma model
-am1<-glmer(Shrub.kg~rescale(elevation)+
-             rescale(patcharea)+
-             factor(year) + 
-             rescale(CN.ratio) + 
-             rescale(C.pct) + 
-             rescale(K.meq) + 
-             rescale(coffee.area.ha) + 
-             rescale(BA.legume)*rescale(Shannon.i) + # this interaction makes sense, but hard to say if there's enough data to evaluate it
-             rescale(buffer) + 
-             rescale(dbh.mn) + 
-             rescale(tmax.anom.fruit) + 
-             rescale(mwd.flower) + rescale(GapDry) + rescale(propCBD) + rescale(propCLR) + rescale(propCBB) + (1|Plot),family="Gamma"(link='log'),data=tmp1)
-summary(am1)
-#check multicollinearity
-vif(am1)
-
-#gamma model: all years
-#order of removal [due to VIF] 1) rescale(tmax.anom.fruit) , 2)rescale(mwd.flower) + 3) rescale(propCBD) + 4) rescale(buffer) + 
-# [due to low significance] 5)  rescale(coffee.area.ha) + , 6) rescale(dbh.mn) + , 7) rescale(patcharea)+ 8) rescale(K.meq) + 
-#9)  rescale(GapDry) + 10) rescale(CN.ratio) + 11) rescale(propCLR) + 
-am2<-glmer(Shrub.kg~rescale(elevation)+
-             factor(year) + 
-             rescale(C.pct) + 
-             rescale(BA.legume)*rescale(Shannon.i) + # this interaction makes sense, but hard to say if there's enough data to evaluate it
-             rescale(propCBB) + (1|Plot),family="Gamma"(link='log'),data=tmp1)
-summary(am2)
-vif(am2)
+ggsave(paste0(folder_names,ptemp,"Finalmodel_results_comboplots.tiff"),height=7,width=18)
 
 
 #####################################################################
